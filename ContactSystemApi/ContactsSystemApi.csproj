@@ -10,4 +10,13 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ContactsSystemInfrastructure\ContactsSystemInfrastructure.csproj" />
+    <ProjectReference Include="..\ContactSystemApplication\ContactsSystemApplication.csproj" />
+  </ItemGroup>
+
 </Project>

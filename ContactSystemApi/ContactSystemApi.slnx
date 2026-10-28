@@ -1,3 +1,6 @@
 <Solution>
-  <Project Path="ContactSystemApi.csproj" />
+  <Project Path="../ContactsSystemInfrastructure/ContactsSystemInfrastructure.csproj" />
+  <Project Path="../ContactSystemApplication/ContactsSystemApplication.csproj" />
+  <Project Path="../ContactSystemDomain/ContactSystemDomain.csproj" />
+  <Project Path="ContactsSystemApi.csproj" />
 </Solution>
