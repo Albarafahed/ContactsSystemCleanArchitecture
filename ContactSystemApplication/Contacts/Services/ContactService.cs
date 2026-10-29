@@ -17,7 +17,7 @@ namespace ContactsSystemApplication.Contacts.Services
         {
          var dto = new ContactDto
          {
-            
+             ContactId = id,
              FirstName = request.FirstName,
              LastName = request.LastName,
              Email = request.Email,

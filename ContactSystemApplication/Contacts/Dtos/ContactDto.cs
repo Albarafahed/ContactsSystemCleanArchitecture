@@ -16,6 +16,7 @@ namespace ContactsSystemApplication.Contacts.Dtos
         public string Address { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
         public int CountryId { get; set; }
+        public string CountryName { get; set; } = string.Empty;
         public string ImagePath { get; set; } = string.Empty;
     }
 }

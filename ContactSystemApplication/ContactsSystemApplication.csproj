@@ -10,4 +10,8 @@
     <ProjectReference Include="..\ContactSystemDomain\ContactSystemDomain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Countries\" />
+  </ItemGroup>
+
 </Project>

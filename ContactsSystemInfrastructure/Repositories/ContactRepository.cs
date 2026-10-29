@@ -30,8 +30,10 @@ namespace ContactsSystemInfrastructure.Repositories
                     Address = e.Address,
                     DateOfBirth = e.DateOfBirth,
                     CountryId = e.CountryId,
+                    CountryName = e.Country.CountryName!,
                     ImagePath = e.ImagePath ?? string.Empty
                 })
+              .OrderBy(x=>x.ContactId)
                 .ToListAsync();
 
             sw.Stop();
