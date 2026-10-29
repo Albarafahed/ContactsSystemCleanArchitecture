@@ -22,4 +22,8 @@
     <ProjectReference Include="..\ContactSystemApplication\ContactsSystemApplication.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
 </Project>
