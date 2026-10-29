@@ -11,12 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <ProjectReference Include="..\ContactsSystemInfrastructure\ContactsSystemInfrastructure.csproj" />
+    <ProjectReference Include="..\ContactSystemApplication\ContactsSystemApplication.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ContactsSystemInfrastructure\ContactsSystemInfrastructure.csproj" />
-    <ProjectReference Include="..\ContactSystemApplication\ContactsSystemApplication.csproj" />
+    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>

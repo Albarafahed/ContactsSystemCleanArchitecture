@@ -65,13 +65,14 @@ namespace ContactsSystemInfrastructure.Repositories
             if (e is null) return false;
             e.FirstName = dto.FirstName; e.LastName = dto.LastName; e.Email = dto.Email; e.Phone = dto.Phone;
             e.Address = dto.Address; e.DateOfBirth = dto.DateOfBirth; e.CountryId = dto.CountryId; e.ImagePath = NullIfEmpty(dto.ImagePath);
-            return true;
+            return await context.SaveChangesAsync() > 0;
         }
         public async Task<bool> DeleteAsync(int id)
         {
             var e = await context.Contacts.FindAsync(id);
             if (e is null) return false;
-            context.Contacts.Remove(e); return true;
+            context.Contacts.Remove(e);
+            return await context.SaveChangesAsync() > 0;
         }
         public Task<bool> ExistsAsync(int id) => context.Contacts.AnyAsync(e => e.ContactId == id);
         private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
