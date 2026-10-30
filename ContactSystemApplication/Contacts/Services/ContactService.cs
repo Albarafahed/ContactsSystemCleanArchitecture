@@ -3,6 +3,7 @@ using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Requests;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ContactsSystemApplication.Contacts.Services;
 
@@ -27,6 +28,7 @@ public class ContactService(IContactRepository contactRepository)
         int id,
         SaveContactRequest request)
     {
+        bool Access = false;
         if (id == 0)
         {
             var newContact = new Contact(
@@ -40,12 +42,13 @@ public class ContactService(IContactRepository contactRepository)
                 request.ImagePath
             );
 
-            await contactRepository.AddAsync(newContact);
+         Access=  await contactRepository.AddAsync(newContact);
+            
 
-            return MapToDto(newContact);
+            return Access ? MapToDto(newContact) : null;
         }
 
-        var existingContact = await contactRepository.GetByIdAsync(id);
+        var existingContact = await contactRepository.GetByIdForUpdateAsync(id);
 
         if (existingContact is null)
             return null;
@@ -59,23 +62,17 @@ public class ContactService(IContactRepository contactRepository)
         existingContact.SetCountryId(request.CountryId);
         existingContact.SetImagePath(request.ImagePath);
 
-        await contactRepository.UpdateAsync(existingContact);
+        Access = await contactRepository.SaveChangesAsync();
 
-        return MapToDto(existingContact);
+        return Access? MapToDto(existingContact) : null;
     }
 
-    public async Task<bool> DeleteContactAsync(int id)
-    {
-        var contact = await contactRepository.GetByIdAsync(id);
-
-        if (contact is null)
-            return false;
-
-        await contactRepository.DeleteAsync(contact);
-
-        return true;
-    }
-
+    public async Task<bool> DeleteContactAsync(int id) => 
+        await contactRepository.DeleteAsync(id);
+    
+    public async Task<bool> ExistsAsync(int id)=>
+        await contactRepository.ExistsAsync(id);
+   
     private static ContactDto MapToDto(Contact contact)
     {
         return new ContactDto

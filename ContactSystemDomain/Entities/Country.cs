@@ -12,7 +12,7 @@ public class Country
 
     public string? PhoneCode { get; private set; }
 
-    public virtual ICollection<Contact> Contacts { get; private set; }
+    public  ICollection<Contact> Contacts { get; private set; }
         = new List<Contact>();
 
     private Country() { }

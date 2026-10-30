@@ -5,14 +5,14 @@ namespace ContactsSystemApplication.Interfaces;
 public interface IContactRepository
 {
     Task<Contact?> GetByIdAsync(int id);
-
+    Task<Contact?> GetByIdForUpdateAsync(int id);
     Task<List<Contact>> GetAllAsync();
 
-    Task AddAsync(Contact contact);
+    Task<bool> AddAsync(Contact contact);
 
-    Task UpdateAsync(Contact contact);
+    public  Task<bool> SaveChangesAsync();
 
-    Task DeleteAsync(Contact contact);
+    Task<bool> DeleteAsync(int id);
 
     Task<bool> ExistsAsync(int id);
 }

@@ -96,6 +96,9 @@ namespace ContactsSystemDomain.Entities
             if (phone.Trim().Length > 20)
                 throw new ArgumentException(
                     "Phone cannot exceed 20 characters.", nameof(phone));
+            if (phone.Trim().Length < 9)
+                throw new ArgumentException(
+                    "Phone cannot exceed 9 characters.", nameof(phone));
 
             Phone = phone.Trim();
         }

@@ -8,5 +8,6 @@ namespace ContactsSystemApplication.Contacts.Interfaces
         Task<List<ContactDto>> GetAllContactsAsync();
         Task<ContactDto?> SaveAsync(int id, SaveContactRequest request);
         Task<bool> DeleteContactAsync(int id);
+        Task<bool> ExistsAsync(int id);
     }
 }

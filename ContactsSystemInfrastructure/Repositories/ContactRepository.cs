@@ -8,42 +8,39 @@ namespace ContactsSystemInfrastructure.Repositories;
 public sealed class ContactRepository(ContactsDbContext context)
     : IContactRepository
 {
-    public async Task<Contact?> GetByIdAsync(int id)
-    {
-        return await context.Contacts
+    public async Task<Contact?> GetByIdAsync(int id)=> await context.Contacts
+            .AsNoTracking()
             .Include(c => c.Country)
             .SingleOrDefaultAsync(c => c.ContactId == id);
-    }
+    public async Task<Contact?> GetByIdForUpdateAsync(int id)=>await context.Contacts.FindAsync(id);
 
-    public async Task<List<Contact>> GetAllAsync()
-    {
-        return await context.Contacts
+
+    public async Task<List<Contact>> GetAllAsync()=>
+     await context.Contacts
             .AsNoTracking()
             .Include(c => c.Country)
             .OrderBy(c => c.ContactId)
             .ToListAsync();
-    }
-
-    public async Task AddAsync(Contact contact)
+  
+    public async Task<bool> AddAsync(Contact contact)
     {
         await context.Contacts.AddAsync(contact);
-        await context.SaveChangesAsync();
+      return  await context.SaveChangesAsync()>0;
     }
 
-    public async Task UpdateAsync(Contact contact)
+    public async Task<bool> SaveChangesAsync()=>
+        await context.SaveChangesAsync() > 0;
+
+
+    public async Task<bool> DeleteAsync(int id)
     {
-        context.Contacts.Update(contact);
-        await context.SaveChangesAsync();
+        return await context.Contacts
+            .Where(c => c.ContactId == id)
+            .ExecuteDeleteAsync() > 0;
     }
 
-    public async Task DeleteAsync(Contact contact)
+    public async Task<bool> ExistsAsync(int id)
     {
-        context.Contacts.Remove(contact);
-        await context.SaveChangesAsync();
-    }
-
-    public Task<bool> ExistsAsync(int id)
-    {
-        return context.Contacts.AnyAsync(c => c.ContactId == id);
+        return await context.Contacts.AnyAsync(c => c.ContactId == id);
     }
 }

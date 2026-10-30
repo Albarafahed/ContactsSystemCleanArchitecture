@@ -78,5 +78,17 @@ namespace ContactsSystemApi.Controllers
 
             return Ok($"Contact with id {id} deleted.");
         }
+
+        [HttpGet("Exists/{id:int}", Name = "ContactExists")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<bool>> ContactExistsAsync(int id)
+        {
+            if (id <= 0) return BadRequest($"Invalid contact with id {id}.");
+            var exists = await contactService.ExistsAsync(id);
+            if(!exists) return NotFound(exists);
+            return Ok(exists);
+        }
     }
 }
