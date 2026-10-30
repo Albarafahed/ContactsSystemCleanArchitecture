@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Countries\Services\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\ContactSystemDomain\ContactsSystemDomain.csproj" />
   </ItemGroup>
 
