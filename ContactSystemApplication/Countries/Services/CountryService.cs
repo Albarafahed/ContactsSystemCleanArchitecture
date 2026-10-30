@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace ContactsSystemApplication.Countries.Services
 {
-    internal class CountryService(ICountryRepository countryRepository) : ICountryService
+    public class CountryService(ICountryRepository countryRepository) : ICountryService
     {
         public async Task<List<CountryDto>> GetAllCountriesAsync()
         {
@@ -21,6 +21,13 @@ namespace ContactsSystemApplication.Countries.Services
             var country = await countryRepository.GetByIdAsync(id);
             return country is null ? null : MapToDto(country);
         }
+        public async Task<CountryDto?> GetCountryByNameAsync(string name)
+        {
+            var country = await countryRepository.GetByNameAsync(name);
+            return country is null ? null : MapToDto(country);
+        }
+        public async Task<bool> ExistsCountryByIdAsync(int id) => await countryRepository.ExistsByIdAsync(id);
+        public async Task<bool> ExistsCountryByNameAsync(string name) => await countryRepository.ExistsByNameAsync(name);
         private static CountryDto MapToDto(Country country)
         {
             return new CountryDto

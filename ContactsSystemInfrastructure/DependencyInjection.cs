@@ -1,5 +1,7 @@
 ﻿using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Services;
+using ContactsSystemApplication.Countries.Interfaces;
+using ContactsSystemApplication.Countries.Services;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemInfrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,9 @@ namespace ContactsSystemInfrastructure
             services.AddDbContext<ContactsDbContext>(options => options.UseSqlServer(connectionString));
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IContactService, ContactService>();
+
+            services.AddScoped<ICountryRepository, CountryRepository>();
+            services.AddScoped<ICountryService, CountryService>();
 
             return services;
         }
