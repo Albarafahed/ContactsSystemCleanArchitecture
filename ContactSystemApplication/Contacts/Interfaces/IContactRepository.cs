@@ -1,19 +1,18 @@
-﻿using ContactsSystemApplication.Contacts.Dtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ContactsSystemDomain.Entities;
 
-namespace ContactsSystemApplication.Contacts.Interfaces
+namespace ContactsSystemApplication.Interfaces;
+
+public interface IContactRepository
 {
-    public interface IContactRepository
-    {
-        Task<ContactDto?> GetByIdAsync(int id);
-        Task<List<ContactDto>> GetAllAsync();
-        Task<ContactDto> AddAsync(ContactDto contact);
-        Task<bool> UpdateAsync(ContactDto contact);
-        Task<bool> DeleteAsync(int id);
-        Task<bool> ExistsAsync(int id);
-    }
+    Task<Contact?> GetByIdAsync(int id);
+
+    Task<List<Contact>> GetAllAsync();
+
+    Task AddAsync(Contact contact);
+
+    Task UpdateAsync(Contact contact);
+
+    Task DeleteAsync(Contact contact);
+
+    Task<bool> ExistsAsync(int id);
 }

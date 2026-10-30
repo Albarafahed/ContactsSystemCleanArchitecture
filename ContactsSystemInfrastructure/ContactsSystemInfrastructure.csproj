@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ContactSystemApplication\ContactsSystemApplication.csproj" />
+    <ProjectReference Include="..\ContactSystemDomain\ContactsSystemDomain.csproj" />
   </ItemGroup>
 
 </Project>

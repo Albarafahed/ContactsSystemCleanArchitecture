@@ -1,6 +1,6 @@
 ﻿using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Services;
-using ContactsSystemInfrastructure.Models;
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemInfrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

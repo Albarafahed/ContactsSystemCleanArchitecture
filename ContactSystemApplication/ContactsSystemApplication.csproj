@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ContactSystemDomain\ContactSystemDomain.csproj" />
+    <Folder Include="Countries\Services\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Countries\Services\" />
+    <ProjectReference Include="..\ContactSystemDomain\ContactsSystemDomain.csproj" />
   </ItemGroup>
 
 </Project>

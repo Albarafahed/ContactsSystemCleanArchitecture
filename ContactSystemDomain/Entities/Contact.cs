@@ -4,20 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContactSystemDomain.Entities
+namespace ContactsSystemDomain.Entities
 {
       public sealed class Contact
     {
+
         public int ContactId { get; private set; }
 
         public string FirstName { get; private set; } = string.Empty;
-
         public string LastName { get; private set; } = string.Empty;
-
         public string Email { get; private set; } = string.Empty;
-
         public string Phone { get; private set; } = string.Empty;
-
         public string Address { get; private set; } = string.Empty;
 
         public DateTime DateOfBirth { get; private set; }
@@ -26,13 +23,9 @@ namespace ContactSystemDomain.Entities
 
         public string? ImagePath { get; private set; }
 
-        // Navigation Property
-        public Country Country { get; private set; } = null!;
+        public  Country Country { get; private set; } = null!;
 
-        // Constructor for Entity Framework Core
-        private Contact()
-        {
-        }
+        private Contact() { }
 
         // Create a new Contact
         public Contact(

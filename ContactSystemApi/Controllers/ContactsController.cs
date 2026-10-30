@@ -1,7 +1,6 @@
 ﻿using ContactsSystemApplication.Contacts.Dtos;
 using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Requests;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Controllers

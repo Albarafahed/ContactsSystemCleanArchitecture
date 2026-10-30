@@ -1,16 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ContactsSystemDomain.Entities;
 
-namespace ContactSystemDomain.Entities
+namespace ContactsSystemDomain.Entities;
+
+public class Country
 {
-    public sealed class Country
-    {
-        public int CountryId { get; set; }
-        public string? CountryName { get; set; }
-        public string? Code { get; set; }
-        public string? PhoneCode { get; set; }
-    }
+    public int CountryId { get; private set; }
+
+    public string? CountryName { get; private set; }
+
+    public string? Code { get; private set; }
+
+    public string? PhoneCode { get; private set; }
+
+    public virtual ICollection<Contact> Contacts { get; private set; }
+        = new List<Contact>();
+
+    private Country() { }
 }
