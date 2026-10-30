@@ -1,3 +1,4 @@
+using ContactsSystemApi.Middleware;
 using ContactsSystemInfrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
-
+app.UseMiddleware<ApiExceptionMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
