@@ -51,9 +51,7 @@ public sealed class ContactsController(IContactService contactService) : Control
     public async Task<ActionResult<ContactDto>> UpdateContactAsync(int id, [FromBody] SaveContactRequest request)
     {
         if (id <= 0) return BadRequest("Contact ID must be greater than zero.");
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(userId)) return Forbid();
-        var contact = await contactService.SaveAsync(id, request, userId);
+        var contact = await contactService.SaveAsync(id, request, OwnerScope);
         return contact is null ? NotFound($"Contact with ID {id} was not found.") : Ok(contact);
     }
 
