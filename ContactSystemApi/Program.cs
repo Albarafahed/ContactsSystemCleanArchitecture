@@ -1,3 +1,4 @@
+using ContactsSystemApi.Middleware;
 using ContactsSystemApi.Services;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemInfrastructure;
@@ -17,6 +18,7 @@ builder.Services.AddScoped<
     CurrentUserService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 
 // Configure the HTTP request pipeline.
