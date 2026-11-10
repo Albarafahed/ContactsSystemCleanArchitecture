@@ -102,7 +102,7 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
     {
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == expected,
-            $"Expected {(int)expected} ({expected}), got {(int)response.StatusCode} ({response.StatusCode}). Response: {body}");
+            $"Expected {(int)expected} ({expected}), got {(int)response.StatusCode} ({response.StatusCode}). WWW-Authenticate: {string.Join(';', response.Headers.WwwAuthenticate)}. Response: {body}");
     }
 
     private sealed record AuthPayload(
