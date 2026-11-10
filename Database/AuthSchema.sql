@@ -107,7 +107,7 @@ BEGIN
         TokenHash nvarchar(64) NOT NULL, UserId nvarchar(450) NOT NULL,
         CreatedAtUtc datetime2 NOT NULL, ExpiresAtUtc datetime2 NOT NULL,
         RevokedAtUtc datetime2 NULL, ReplacedByTokenHash nvarchar(64) NULL,
-        RowVersion rowversion NOT NULL,
+        RowVersion varbinary(8) NOT NULL,
         CONSTRAINT FK_RefreshTokens_AspNetUsers_UserId
             FOREIGN KEY(UserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE CASCADE
     );
@@ -116,7 +116,8 @@ BEGIN
 END;
 GO
 IF COL_LENGTH(N'dbo.RefreshTokens', N'RowVersion') IS NULL
-    ALTER TABLE dbo.RefreshTokens ADD RowVersion rowversion NOT NULL;
+    ALTER TABLE dbo.RefreshTokens ADD RowVersion varbinary(8) NOT NULL
+        CONSTRAINT DF_RefreshTokens_RowVersion DEFAULT (CONVERT(varbinary(8), NEWID()));
 GO
 IF NOT EXISTS (SELECT 1 FROM dbo.AspNetRoles WHERE NormalizedName = N'USER')
     INSERT dbo.AspNetRoles(Id, Name, NormalizedName, ConcurrencyStamp)
