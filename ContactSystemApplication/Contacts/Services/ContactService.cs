@@ -23,6 +23,33 @@ public sealed class ContactService(
         return contacts.Select(MapToDto).ToList();
     }
 
+
+    public async Task<PagedResultDto<ContactDto>> GetPagedContactsAsync(
+        string? ownerUserId, string? search, int? countryId, int pageNumber, int pageSize)
+    {
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber), "Page number must be at least 1.");
+        if (pageSize is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(pageSize), "Page size must be between 1 and 100.");
+        if (countryId is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(countryId), "Country ID must be greater than zero.");
+        if (search?.Length > 100)
+            throw new ArgumentException("Search text cannot exceed 100 characters.", nameof(search));
+
+        var (items, totalCount) = await contactRepository.GetPagedAsync(
+            ownerUserId, search, countryId, pageNumber, pageSize);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PagedResultDto<ContactDto>(
+            items.Select(MapToDto).ToList(),
+            pageNumber,
+            pageSize,
+            totalCount,
+            totalPages,
+            pageNumber > 1,
+            pageNumber < totalPages);
+    }
+
     public async Task<ContactDto?> SaveAsync(int id, SaveContactRequest request, string? ownerUserId)
     {
         if (id < 0)
