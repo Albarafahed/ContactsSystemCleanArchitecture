@@ -1,36 +1,36 @@
-﻿using ContactsSystemApplication.Contacts.Dtos;
+using ContactsSystemApplication.Contacts.Dtos;
 using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Requests;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
-using System.Reflection.Metadata.Ecma335;
 
 namespace ContactsSystemApplication.Contacts.Services;
 
-public class ContactService(IContactRepository contactRepository)
+public sealed class ContactService(IContactRepository contactRepository)
     : IContactService
 {
     public async Task<ContactDto?> GetContactByIdAsync(int id)
     {
         var contact = await contactRepository.GetByIdAsync(id);
-
         return contact is null ? null : MapToDto(contact);
     }
 
     public async Task<List<ContactDto>> GetAllContactsAsync()
     {
         var contacts = await contactRepository.GetAllAsync();
-
         return contacts.Select(MapToDto).ToList();
     }
 
-    public async Task<ContactDto?> SaveAsync(
-        int id,
-        SaveContactRequest request)
+    public async Task<ContactDto?> SaveAsync(int id, SaveContactRequest request)
     {
-        bool Access = false;
+        if (id < 0)
+            throw new ArgumentOutOfRangeException(nameof(id), "Contact ID cannot be negative.");
+
         if (id == 0)
         {
+            if (await contactRepository.EmailExistsAsync(request.Email))
+                throw new ArgumentException("A contact with this email address already exists.", nameof(request.Email));
+
             var newContact = new Contact(
                 request.FirstName,
                 request.LastName,
@@ -39,19 +39,21 @@ public class ContactService(IContactRepository contactRepository)
                 request.Address,
                 request.DateOfBirth,
                 request.CountryId,
-                request.ImagePath
-            );
+                request.ImagePath);
 
-         Access=  await contactRepository.AddAsync(newContact);
-            
+            if (!await contactRepository.AddAsync(newContact))
+                return null;
 
-            return Access ? MapToDto(newContact) : null;
+            var createdContact = await contactRepository.GetByIdAsync(newContact.ContactId);
+            return createdContact is null ? null : MapToDto(createdContact);
         }
 
         var existingContact = await contactRepository.GetByIdForUpdateAsync(id);
-
         if (existingContact is null)
             return null;
+
+        if (await contactRepository.EmailExistsAsync(request.Email, id))
+            throw new ArgumentException("A contact with this email address already exists.", nameof(request.Email));
 
         existingContact.SetFirstName(request.FirstName);
         existingContact.SetLastName(request.LastName);
@@ -62,20 +64,21 @@ public class ContactService(IContactRepository contactRepository)
         existingContact.SetCountryId(request.CountryId);
         existingContact.SetImagePath(request.ImagePath);
 
-        Access = await contactRepository.SaveChangesAsync();
+        if (!await contactRepository.SaveChangesAsync())
+            return null;
 
-        return Access? MapToDto(existingContact) : null;
+        var updatedContact = await contactRepository.GetByIdAsync(id);
+        return updatedContact is null ? null : MapToDto(updatedContact);
     }
 
-    public async Task<bool> DeleteContactAsync(int id) => 
-        await contactRepository.DeleteAsync(id);
-    
-    public async Task<bool> ExistsAsync(int id)=>
-        await contactRepository.ExistsAsync(id);
-   
-    private static ContactDto MapToDto(Contact contact)
-    {
-        return new ContactDto
+    public Task<bool> DeleteContactAsync(int id) =>
+        contactRepository.DeleteAsync(id);
+
+    public Task<bool> ExistsAsync(int id) =>
+        contactRepository.ExistsAsync(id);
+
+    private static ContactDto MapToDto(Contact contact) =>
+        new()
         {
             ContactId = contact.ContactId,
             FirstName = contact.FirstName,
@@ -88,5 +91,4 @@ public class ContactService(IContactRepository contactRepository)
             CountryName = contact.Country?.CountryName ?? string.Empty,
             ImagePath = contact.ImagePath ?? string.Empty
         };
-    }
 }
