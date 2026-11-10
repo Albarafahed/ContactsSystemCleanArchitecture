@@ -508,11 +508,7 @@ ContactsSystemCleanArch
 
 ## 📝 Current Scope
 
-This project focuses on backend architecture and contact management.
-
-Its primary goal is to demonstrate how to organize a .NET application using Clean Architecture, domain entities, application services, repository abstractions, and EF Core.
-
-Features not implemented yet should not be considered part of the current application.
+This project now includes contact management, ASP.NET Core Identity authentication, JWT access tokens, refresh-token rotation, role-based access, and per-user contact ownership. The security section below documents the setup and known limitations.
 
 ---
 
