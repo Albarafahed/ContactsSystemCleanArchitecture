@@ -14,19 +14,13 @@ public sealed class Contact
     public DateTime DateOfBirth { get; private set; }
     public int CountryId { get; private set; }
     public string? ImagePath { get; private set; }
+    public string? UserId { get; private set; }
     public Country Country { get; private set; } = null!;
 
     private Contact() { }
 
-    public Contact(
-        string firstName,
-        string lastName,
-        string email,
-        string phone,
-        string address,
-        DateTime dateOfBirth,
-        int countryId,
-        string? imagePath = null)
+    public Contact(string firstName, string lastName, string email, string phone,
+        string address, DateTime dateOfBirth, int countryId, string? imagePath = null)
     {
         SetFirstName(firstName);
         SetLastName(lastName);
@@ -38,15 +32,15 @@ public sealed class Contact
         SetImagePath(imagePath);
     }
 
-    public void SetFirstName(string firstName)
+    public void AssignToUser(string userId)
     {
-        FirstName = ValidateRequiredText(firstName, 50, nameof(firstName), "First name");
+        if (string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentException("A valid owner user ID is required.", nameof(userId));
+        UserId = userId.Trim();
     }
 
-    public void SetLastName(string lastName)
-    {
-        LastName = ValidateRequiredText(lastName, 50, nameof(lastName), "Last name");
-    }
+    public void SetFirstName(string firstName) => FirstName = ValidateRequiredText(firstName, 50, nameof(firstName), "First name");
+    public void SetLastName(string lastName) => LastName = ValidateRequiredText(lastName, 50, nameof(lastName), "Last name");
 
     public void SetEmail(string email)
     {
@@ -61,35 +55,25 @@ public sealed class Contact
         {
             throw new ArgumentException("A valid email address is required.", nameof(email));
         }
-
         Email = value;
     }
 
     public void SetPhone(string phone)
     {
         var value = ValidateRequiredText(phone, 20, nameof(phone), "Phone");
-        if (value.Length < 7 ||
-            !Regex.IsMatch(value, @"^[0-9+() .-]+$", RegexOptions.CultureInvariant))
-        {
+        if (value.Length < 7 || !Regex.IsMatch(value, @"^[0-9+() .-]+$", RegexOptions.CultureInvariant))
             throw new ArgumentException("Phone must contain 7 to 20 valid phone characters.", nameof(phone));
-        }
-
         Phone = value;
     }
 
-    public void SetAddress(string address)
-    {
-        Address = ValidateRequiredText(address, 200, nameof(address), "Address");
-    }
+    public void SetAddress(string address) => Address = ValidateRequiredText(address, 200, nameof(address), "Address");
 
     public void SetDateOfBirth(DateTime dateOfBirth)
     {
         if (dateOfBirth == default)
             throw new ArgumentException("Date of birth is required.", nameof(dateOfBirth));
-
         if (dateOfBirth.Date > DateTime.Today)
             throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
-
         DateOfBirth = dateOfBirth;
     }
 
@@ -97,7 +81,6 @@ public sealed class Contact
     {
         if (countryId <= 0)
             throw new ArgumentOutOfRangeException(nameof(countryId), "Country ID must be greater than zero.");
-
         CountryId = countryId;
     }
 
@@ -105,7 +88,6 @@ public sealed class Contact
     {
         if (imagePath?.Trim().Length > 500)
             throw new ArgumentException("Image path cannot exceed 500 characters.", nameof(imagePath));
-
         ImagePath = string.IsNullOrWhiteSpace(imagePath) ? null : imagePath.Trim();
     }
 
@@ -113,11 +95,9 @@ public sealed class Contact
     {
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException($"{fieldName} is required.", parameterName);
-
         var normalized = value.Trim();
         if (normalized.Length > maxLength)
             throw new ArgumentException($"{fieldName} cannot exceed {maxLength} characters.", parameterName);
-
         return normalized;
     }
 }
