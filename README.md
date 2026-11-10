@@ -411,6 +411,8 @@ Main database entities include:
 ```text
 Contacts
 Countries
+AspNetUsers / AspNetRoles (ASP.NET Core Identity)
+RefreshTokens
 ```
 
 The database stores contact information and the relationships between contacts and countries.
@@ -514,6 +516,62 @@ Features not implemented yet should not be considered part of the current applic
 
 ---
 
+## 🔐 Authentication & Authorization
+
+The authentication implementation uses **ASP.NET Core Identity** with JWT Bearer authentication.
+
+### Implemented endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | Register a standard User account |
+| POST | `/api/auth/login` | Verify credentials and issue tokens |
+| POST | `/api/auth/refresh` | Rotate a refresh token |
+| POST | `/api/auth/logout` | Revoke the supplied refresh token |
+
+### Security controls
+
+- Password hashing and validation are delegated to ASP.NET Core Identity.
+- Failed login attempts trigger Identity lockout settings.
+- Access tokens are signed JWTs with issuer, audience, signature, and lifetime validation.
+- Refresh tokens are generated using a cryptographically secure random generator.
+- Only SHA-256 hashes of refresh tokens are stored in the database.
+- Refresh-token rotation revokes the previous token; a SQL Server rowversion protects against concurrent reuse.
+- Authentication endpoints use a fixed-window rate limit.
+- Contact endpoints require authentication. A regular User can access only contacts linked to their user ID; Admin can access all contacts.
+- Existing contacts remain unassigned (`UserId = NULL`) after the schema update and are not exposed to regular users.
+
+### Database setup for authentication
+
+1. Back up your existing `ContactsDB`.
+2. Run `Database/AuthSchema.sql` against `ContactsDB`. It creates the ASP.NET Core Identity tables, refresh-token table, and nullable `Contacts.UserId` relationship without deleting existing contacts.
+3. Configure the connection string as described below.
+4. Configure JWT settings using User Secrets from the API project directory:
+
+```bash
+dotnet user-secrets set "Jwt:Issuer" "ContactsSystemApi"
+dotnet user-secrets set "Jwt:Audience" "ContactsSystemClient"
+dotnet user-secrets set "Jwt:Key" "<a-random-secret-at-least-32-utf8-bytes>"
+dotnet user-secrets set "Jwt:AccessTokenMinutes" "15"
+dotnet user-secrets set "Jwt:RefreshTokenDays" "7"
+```
+
+Generate a unique secret for each environment. Never commit the real signing key or connection string.
+
+### Admin account provisioning
+
+Public registration always creates the `User` role; it does not allow clients to self-register as Admin. The schema script creates the `Admin` role. To promote a trusted account, first register it, then assign its user ID to the Admin role using a controlled database operation. Do not expose an unrestricted public role-assignment endpoint.
+
+### Current limitations
+
+- Email confirmation and password-reset delivery are not configured.
+- Admin promotion is an operator-controlled database step.
+- Legacy contacts require an explicit ownership review before they can be assigned to users.
+- Access JWTs remain valid until their short expiry; logout revokes the refresh token, not already-issued access tokens.
+- The project still needs a full automated test suite and an actual build/run verification after applying the schema.
+
+---
+
 ## 🚀 Future Improvements
 
 Potential improvements include:
@@ -535,10 +593,9 @@ Potential improvements include:
 
 ### Security
 
-- Authentication and Authorization.
-- JWT Bearer Authentication.
-- Role-Based Access Control (RBAC).
-- Refresh-token rotation and revocation.
+- Email confirmation and password-reset workflows.
+- Automated Admin provisioning with a secure one-time bootstrap process.
+- Broader authorization policies and security integration tests.
 
 ### Testing
 
