@@ -22,7 +22,7 @@ public interface IContactService
         SaveContactRequest request,
         CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(
+    Task<bool> DeleteAsync(
         int contactId,
         CancellationToken cancellationToken = default);
 }

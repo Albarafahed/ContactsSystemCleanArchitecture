@@ -22,6 +22,6 @@ public interface IContactRepository
 
     void Delete(Contact contact);
 
-    Task SaveChangesAsync(
+    Task<bool> SaveChangesAsync(
         CancellationToken cancellationToken = default);
 }

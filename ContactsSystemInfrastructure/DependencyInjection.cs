@@ -5,6 +5,7 @@ using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure.Persistence;
 using ContactsSystemInfrastructure.Repositories;
+using ContactsSystemInfrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +26,9 @@ namespace ContactsSystemInfrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IContactService, ContactService>();
-
             services.AddScoped<ICountryRepository, CountryRepository>();
             services.AddScoped<ICountryService, CountryService>();
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
 
             return services;
         }

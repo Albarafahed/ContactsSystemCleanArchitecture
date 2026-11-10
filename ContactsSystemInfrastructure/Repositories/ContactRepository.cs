@@ -54,9 +54,9 @@ public sealed class ContactRepository (ContactsDbContext context) : IContactRepo
         context.Contacts.Remove(contact);
     }
 
-    public Task SaveChangesAsync(
+    public async Task<bool> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
-        return context.SaveChangesAsync(cancellationToken);
+        return await context.SaveChangesAsync(cancellationToken) > 0;
     }
 }
