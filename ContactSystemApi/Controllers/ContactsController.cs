@@ -1,94 +1,87 @@
-﻿using ContactsSystemApplication.Contacts.Dtos;
+using ContactsSystemApplication.Contacts.Dtos;
 using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Requests;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ContactsSystemApi.Controllers
+namespace ContactsSystemApi.Controllers;
+
+[Route("api/contacts")]
+[ApiController]
+public sealed class ContactsController(IContactService contactService) : ControllerBase
 {
-    [Route("api/Contacts")]
-    [ApiController]
-    public class ContactsController(IContactService contactService) : ControllerBase
+    [HttpGet("all", Name = "GetAllContacts")]
+    [ProducesResponseType(typeof(IEnumerable<ContactDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ContactDto>>> GetAllContactsAsync()
     {
-        [HttpGet("All", Name = "GetAllContacts")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ContactDto>>> GetAllContactsAsync()
-        {
-            var contacts = await contactService.GetAllContactsAsync();
-            if(contacts.Count==0) return NotFound("No contacts found.");
-            return Ok(contacts);
-        }
+        var contacts = await contactService.GetAllContactsAsync();
+        return Ok(contacts);
+    }
 
-        [HttpGet("{id:int}", Name = "GetContactById")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ContactDto>> GetContactByIdAsync(int id)
-        {
+    [HttpGet("{id:int}", Name = "GetContactById")]
+    [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ContactDto>> GetContactByIdAsync(int id)
+    {
+        if (id <= 0)
+            return BadRequest("Contact ID must be greater than zero.");
 
-            if(id <= 0) return BadRequest($"Invalid contact with id {id}.");
-            var contact = await contactService.GetContactByIdAsync(id);
-            if (contact is null) return NotFound($"Contact with id {id} not found.");
-            return Ok(contact);
-        }
+        var contact = await contactService.GetContactByIdAsync(id);
+        return contact is null
+            ? NotFound($"Contact with ID {id} was not found.")
+            : Ok(contact);
+    }
 
-        [HttpPost("", Name = "AddContact")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ContactDto>> AddContactAsync(SaveContactRequest contactRequest)
-        {
-            var contact = await contactService.SaveAsync(0, contactRequest);
+    [HttpPost]
+    [ProducesResponseType(typeof(ContactDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ContactDto>> AddContactAsync([FromBody] SaveContactRequest contactRequest)
+    {
+        var contact = await contactService.SaveAsync(0, contactRequest);
+        if (contact is null)
+            return Problem(statusCode: StatusCodes.Status500InternalServerError, title: "The contact could not be created.");
 
-            if (contact is null)
-                return Problem(
-                    statusCode: StatusCodes.Status500InternalServerError,
-                    title: "Failed to create contact.");
+        return CreatedAtRoute("GetContactById", new { id = contact.ContactId }, contact);
+    }
 
-            return CreatedAtRoute("GetContactById", new { id = contact.ContactId }, contact);
-        }
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ContactDto>> UpdateContactAsync(
+        int id,
+        [FromBody] SaveContactRequest contactRequest)
+    {
+        if (id <= 0)
+            return BadRequest("Contact ID must be greater than zero.");
 
-        [HttpPut("{id:int}", Name = "UpdateContact")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ContactDto>> UpdateContactAsync(int id, SaveContactRequest contactRequest)
-        {
-            if (id <= 0) return BadRequest($"Invalid contact with id {id}.");
-            var contact = await contactService.SaveAsync(id, contactRequest);
-            if (contact is null)
-                return Problem(
-                    statusCode: StatusCodes.Status500InternalServerError,
-                    title: $"Failed to update contact with id {id}.");
-            return Ok(contact);
-        }
-        
-        [HttpDelete("{id:int}", Name = "DeleteContact")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> DeleteContactAsync(int id)
-        {
-            if (id <= 0) return BadRequest($"Invalid contact with id {id}.");
-            var deleted = await contactService.DeleteContactAsync(id);
-            if (!deleted)
-              return NotFound($"Contact with id {id} not found.");
+        var contact = await contactService.SaveAsync(id, contactRequest);
+        return contact is null
+            ? NotFound($"Contact with ID {id} was not found.")
+            : Ok(contact);
+    }
 
-            return Ok($"Contact with id {id} deleted.");
-        }
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteContactAsync(int id)
+    {
+        if (id <= 0)
+            return BadRequest("Contact ID must be greater than zero.");
 
-        [HttpGet("Exists/{id:int}", Name = "ContactExists")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> ContactExistsAsync(int id)
-        {
-            if (id <= 0) return BadRequest($"Invalid contact with id {id}.");
-            var exists = await contactService.ExistsAsync(id);
-            if(!exists) return NotFound(exists);
-            return Ok(exists);
-        }
+        var deleted = await contactService.DeleteContactAsync(id);
+        return deleted ? NoContent() : NotFound($"Contact with ID {id} was not found.");
+    }
+
+    [HttpGet("exists/{id:int}", Name = "ContactExists")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<bool>> ContactExistsAsync(int id)
+    {
+        if (id <= 0)
+            return BadRequest("Contact ID must be greater than zero.");
+
+        return Ok(await contactService.ExistsAsync(id));
     }
 }
