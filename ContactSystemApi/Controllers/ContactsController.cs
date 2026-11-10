@@ -14,7 +14,7 @@ public sealed class ContactsController(IContactService contactService) : Control
 {
     private string? OwnerScope => User.IsInRole("Admin")
         ? null
-        : User.FindFirstValue(ClaimTypes.NameIdentifier);
+        : User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
     [HttpGet("all", Name = "GetAllContacts")]
     [ProducesResponseType(typeof(IEnumerable<ContactDto>), StatusCodes.Status200OK)]
