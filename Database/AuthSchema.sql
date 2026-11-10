@@ -115,6 +115,11 @@ BEGIN
     CREATE INDEX IX_RefreshTokens_UserId_ExpiresAtUtc ON dbo.RefreshTokens(UserId, ExpiresAtUtc);
 END;
 GO
+IF OBJECT_ID(N'dbo.RefreshTokens', N'U') IS NOT NULL
+   AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.RefreshTokens')
+               AND name = N'RowVersion' AND system_type_id = 189)
+    ALTER TABLE dbo.RefreshTokens DROP COLUMN RowVersion;
+GO
 IF COL_LENGTH(N'dbo.RefreshTokens', N'RowVersion') IS NULL
     ALTER TABLE dbo.RefreshTokens ADD RowVersion varbinary(8) NOT NULL
         CONSTRAINT DF_RefreshTokens_RowVersion DEFAULT (CONVERT(varbinary(8), NEWID()));
