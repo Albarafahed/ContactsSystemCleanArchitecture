@@ -1,148 +1,123 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
 
-namespace ContactsSystemDomain.Entities
+namespace ContactsSystemDomain.Entities;
+
+public sealed class Contact
 {
-      public sealed class Contact
+    public int ContactId { get; private set; }
+    public string FirstName { get; private set; } = string.Empty;
+    public string LastName { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public string Phone { get; private set; } = string.Empty;
+    public string Address { get; private set; } = string.Empty;
+    public DateTime DateOfBirth { get; private set; }
+    public int CountryId { get; private set; }
+    public string? ImagePath { get; private set; }
+    public Country Country { get; private set; } = null!;
+
+    private Contact() { }
+
+    public Contact(
+        string firstName,
+        string lastName,
+        string email,
+        string phone,
+        string address,
+        DateTime dateOfBirth,
+        int countryId,
+        string? imagePath = null)
     {
+        SetFirstName(firstName);
+        SetLastName(lastName);
+        SetEmail(email);
+        SetPhone(phone);
+        SetAddress(address);
+        SetDateOfBirth(dateOfBirth);
+        SetCountryId(countryId);
+        SetImagePath(imagePath);
+    }
 
-        public int ContactId { get; private set; }
+    public void SetFirstName(string firstName)
+    {
+        FirstName = ValidateRequiredText(firstName, 50, nameof(firstName), "First name");
+    }
 
-        public string FirstName { get; private set; } = string.Empty;
-        public string LastName { get; private set; } = string.Empty;
-        public string Email { get; private set; } = string.Empty;
-        public string Phone { get; private set; } = string.Empty;
-        public string Address { get; private set; } = string.Empty;
+    public void SetLastName(string lastName)
+    {
+        LastName = ValidateRequiredText(lastName, 50, nameof(lastName), "Last name");
+    }
 
-        public DateTime DateOfBirth { get; private set; }
-
-        public int CountryId { get; private set; }
-
-        public string? ImagePath { get; private set; }
-
-        public  Country Country { get; private set; } = null!;
-
-        private Contact() { }
-
-        // Create a new Contact
-        public Contact(
-            string firstName,
-            string lastName,
-            string email,
-            string phone,
-            string address,
-            DateTime dateOfBirth,
-            int countryId,
-            string? imagePath = null)
+    public void SetEmail(string email)
+    {
+        var value = ValidateRequiredText(email, 50, nameof(email), "Email");
+        try
         {
-            SetFirstName(firstName);
-            SetLastName(lastName);
-            SetEmail(email);
-            SetPhone(phone);
-            SetAddress(address);
-            SetDateOfBirth(dateOfBirth);
-            SetCountryId(countryId);
-            SetImagePath(imagePath);
+            var parsed = new MailAddress(value);
+            if (!string.Equals(parsed.Address, value, StringComparison.OrdinalIgnoreCase))
+                throw new FormatException();
+        }
+        catch (FormatException)
+        {
+            throw new ArgumentException("A valid email address is required.", nameof(email));
         }
 
-        public void SetFirstName(string firstName)
+        Email = value;
+    }
+
+    public void SetPhone(string phone)
+    {
+        var value = ValidateRequiredText(phone, 20, nameof(phone), "Phone");
+        if (value.Length < 7 ||
+            !Regex.IsMatch(value, @"^[0-9+() .-]+$", RegexOptions.CultureInvariant))
         {
-            if (string.IsNullOrWhiteSpace(firstName))
-                throw new ArgumentException(
-                    "First name is required.", nameof(firstName));
-
-            if (firstName.Trim().Length > 50)
-                throw new ArgumentException(
-                    "First name cannot exceed 50 characters.", nameof(firstName));
-
-            FirstName = firstName.Trim();
+            throw new ArgumentException("Phone must contain 7 to 20 valid phone characters.", nameof(phone));
         }
 
-        public void SetLastName(string lastName)
-        {
-            if (string.IsNullOrWhiteSpace(lastName))
-                throw new ArgumentException(
-                    "Last name is required.", nameof(lastName));
+        Phone = value;
+    }
 
-            if (lastName.Trim().Length > 50)
-                throw new ArgumentException(
-                    "Last name cannot exceed 50 characters.", nameof(lastName));
+    public void SetAddress(string address)
+    {
+        Address = ValidateRequiredText(address, 200, nameof(address), "Address");
+    }
 
-            LastName = lastName.Trim();
-        }
+    public void SetDateOfBirth(DateTime dateOfBirth)
+    {
+        if (dateOfBirth == default)
+            throw new ArgumentException("Date of birth is required.", nameof(dateOfBirth));
 
-        public void SetEmail(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new ArgumentException(
-                    "Email is required.", nameof(email));
+        if (dateOfBirth.Date > DateTime.Today)
+            throw new ArgumentException("Date of birth cannot be in the future.", nameof(dateOfBirth));
 
-            if (email.Trim().Length > 50)
-                throw new ArgumentException(
-                    "Email cannot exceed 50 characters.", nameof(email));
+        DateOfBirth = dateOfBirth;
+    }
 
-            Email = email.Trim();
-        }
+    public void SetCountryId(int countryId)
+    {
+        if (countryId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(countryId), "Country ID must be greater than zero.");
 
-        public void SetPhone(string phone)
-        {
-            if (string.IsNullOrWhiteSpace(phone))
-                throw new ArgumentException(
-                    "Phone is required.", nameof(phone));
+        CountryId = countryId;
+    }
 
-            if (phone.Trim().Length > 20)
-                throw new ArgumentException(
-                    "Phone cannot exceed 20 characters.", nameof(phone));
-            if (phone.Trim().Length < 9)
-                throw new ArgumentException(
-                    "Phone cannot exceed 9 characters.", nameof(phone));
+    public void SetImagePath(string? imagePath)
+    {
+        if (imagePath?.Trim().Length > 500)
+            throw new ArgumentException("Image path cannot exceed 500 characters.", nameof(imagePath));
 
-            Phone = phone.Trim();
-        }
+        ImagePath = string.IsNullOrWhiteSpace(imagePath) ? null : imagePath.Trim();
+    }
 
-        public void SetAddress(string address)
-        {
-            if (string.IsNullOrWhiteSpace(address))
-                throw new ArgumentException(
-                    "Address is required.", nameof(address));
+    private static string ValidateRequiredText(string value, int maxLength, string parameterName, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{fieldName} is required.", parameterName);
 
-            if (address.Trim().Length > 200)
-                throw new ArgumentException(
-                    "Address cannot exceed 200 characters.", nameof(address));
+        var normalized = value.Trim();
+        if (normalized.Length > maxLength)
+            throw new ArgumentException($"{fieldName} cannot exceed {maxLength} characters.", parameterName);
 
-            Address = address.Trim();
-        }
-
-        public void SetDateOfBirth(DateTime dateOfBirth)
-        {
-            if (dateOfBirth.Date > DateTime.Today)
-                throw new ArgumentException(
-                    "Date of birth cannot be in the future.", nameof(dateOfBirth));
-
-            DateOfBirth = dateOfBirth;
-        }
-
-        public void SetCountryId(int countryId)
-        {
-            if (countryId <= 0)
-                throw new ArgumentOutOfRangeException(
-                    nameof(countryId), "Country ID must be greater than zero.");
-
-            CountryId = countryId;
-        }
-
-        public void SetImagePath(string? imagePath)
-        {
-            if (imagePath?.Length > 500)
-                throw new ArgumentException(
-                    "Image path cannot exceed 500 characters.", nameof(imagePath));
-
-            ImagePath = string.IsNullOrWhiteSpace(imagePath)
-                ? null
-                : imagePath.Trim();
-        }
+        return normalized;
     }
 }
