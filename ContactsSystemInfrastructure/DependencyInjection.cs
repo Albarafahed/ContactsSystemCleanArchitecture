@@ -22,6 +22,9 @@ public static class DependencyInjection
             throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection using user secrets or the ConnectionStrings__DefaultConnection environment variable.");
 
         services.AddDbContext<ContactsDbContext>(options => options.UseSqlServer(connectionString));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+
         services.AddIdentityCore<ApplicationUser>(options =>
         {
             options.User.RequireUniqueEmail = true;
