@@ -47,8 +47,7 @@ public static class DependencyInjection
             options.Lockout.AllowedForNewUsers = true;
         })
         .AddRoles<IdentityRole>()
-        .AddEntityFrameworkStores<ContactsDbContext>()
-        .AddDefaultTokenProviders();
+        .AddEntityFrameworkStores<ContactsDbContext>();
 
         services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<IContactService, ContactService>();
