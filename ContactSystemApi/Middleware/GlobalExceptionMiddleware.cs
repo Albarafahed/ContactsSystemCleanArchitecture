@@ -1,4 +1,5 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Middleware;
@@ -43,6 +44,9 @@ public sealed class GlobalExceptionMiddleware
 
                 UnauthorizedAccessException =>
                     (StatusCodes.Status403Forbidden, "Access denied"),
+
+                ValidationException =>
+                    (StatusCodes.Status400BadRequest, "Validation failed"),
 
                 ArgumentException =>
                     (StatusCodes.Status400BadRequest, "Invalid request"),

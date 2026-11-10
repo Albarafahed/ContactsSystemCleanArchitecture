@@ -19,8 +19,6 @@ builder.Services.AddScoped<
 builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
 app.UseMiddleware<GlobalExceptionMiddleware>();
-
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
