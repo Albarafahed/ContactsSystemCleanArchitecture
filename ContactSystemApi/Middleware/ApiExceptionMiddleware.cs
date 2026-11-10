@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Middleware;
 
 public sealed class ApiExceptionMiddleware(
     RequestDelegate next,
-    ILogger<ApiExceptionMiddleware> logger)
+    ILogger<ApiExceptionMiddleware> logger,
+    IHostEnvironment environment)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -34,7 +35,8 @@ public sealed class ApiExceptionMiddleware(
             await context.Response.WriteAsJsonAsync(new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
-                Title = "An unexpected error occurred."
+                Title = "An unexpected error occurred.",
+                Detail = environment.IsDevelopment() ? ex.Message : null
             });
         }
     }
