@@ -1,12 +1,15 @@
 using ContactsSystemApplication.Contacts.Dtos;
 using ContactsSystemApplication.Contacts.Interfaces;
 using ContactsSystemApplication.Contacts.Requests;
+using ContactsSystemApplication.Countries.Interfaces;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 
 namespace ContactsSystemApplication.Contacts.Services;
 
-public sealed class ContactService(IContactRepository contactRepository)
+public sealed class ContactService(
+    IContactRepository contactRepository,
+    ICountryRepository countryRepository)
     : IContactService
 {
     public async Task<ContactDto?> GetContactByIdAsync(int id)
@@ -25,6 +28,9 @@ public sealed class ContactService(IContactRepository contactRepository)
     {
         if (id < 0)
             throw new ArgumentOutOfRangeException(nameof(id), "Contact ID cannot be negative.");
+
+        if (!await countryRepository.ExistsByIdAsync(request.CountryId))
+            throw new ArgumentException($"Country with ID {request.CountryId} does not exist.", nameof(request.CountryId));
 
         if (id == 0)
         {
