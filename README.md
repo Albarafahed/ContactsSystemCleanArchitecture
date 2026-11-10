@@ -575,7 +575,7 @@ Public registration always creates the `User` role; it does not allow clients to
 
 ## 🧪 Automated Tests
 
-A focused Domain unit-test project is included at `ContactSystem.Tests`.
+The `ContactSystem.Tests` project includes Domain unit tests and SQLite-backed repository tests for per-user contact ownership.
 
 Run the tests from the repository root:
 
@@ -583,7 +583,7 @@ Run the tests from the repository root:
 dotnet test ContactSystem.Tests/ContactSystem.Tests.csproj --configuration Release
 ```
 
-GitHub Actions also builds the API and runs these Domain tests on pushes and pull requests. Authentication flows, user-to-user ownership isolation, and SQL Server integration still need dedicated integration tests.
+GitHub Actions also builds the API and runs these Domain tests on pushes and pull requests. JWT registration/login/refresh/logout flows and production SQL Server integration still need dedicated integration tests. Ownership filtering, cross-user reads, cross-user deletes, and Admin-wide reads are covered by the SQLite-backed repository tests.
 
 ---
 
@@ -615,7 +615,7 @@ Potential improvements include:
 ### Testing
 
 - Authentication endpoint integration tests.
-- Cross-user contact ownership tests.
+- JWT registration/login/refresh/logout integration tests.
 - SQL Server repository integration tests.
 - Application service tests.
 
