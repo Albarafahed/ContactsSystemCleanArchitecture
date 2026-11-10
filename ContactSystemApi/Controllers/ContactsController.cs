@@ -16,6 +16,29 @@ public sealed class ContactsController(IContactService contactService) : Control
         ? null
         : User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
+
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResultDto<ContactDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PagedResultDto<ContactDto>>> GetPagedContactsAsync(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? search = null,
+        [FromQuery] int? countryId = null)
+    {
+        if (pageNumber < 1)
+            return BadRequest("Page number must be at least 1.");
+        if (pageSize is < 1 or > 100)
+            return BadRequest("Page size must be between 1 and 100.");
+        if (countryId is <= 0)
+            return BadRequest("Country ID must be greater than zero.");
+        if (search?.Length > 100)
+            return BadRequest("Search text cannot exceed 100 characters.");
+
+        return Ok(await contactService.GetPagedContactsAsync(
+            OwnerScope, search, countryId, pageNumber, pageSize));
+    }
+
     [HttpGet("all", Name = "GetAllContacts")]
     [ProducesResponseType(typeof(IEnumerable<ContactDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ContactDto>>> GetAllContactsAsync() =>
