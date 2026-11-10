@@ -3,6 +3,7 @@ using ContactsSystemApi.Middleware;
 using ContactsSystemInfrastructure;
 using ContactsSystemInfrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -36,6 +37,8 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddInfrastructure(builder.Configuration);
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration is required.");
+if (string.IsNullOrWhiteSpace(jwt.Issuer) || string.IsNullOrWhiteSpace(jwt.Audience))
+    throw new InvalidOperationException("Jwt:Issuer and Jwt:Audience must be configured.");
 var signingKey = Encoding.UTF8.GetBytes(jwt.Key);
 if (signingKey.Length < 32)
     throw new InvalidOperationException("Set Jwt:Key to a secret containing at least 32 UTF-8 bytes.");
@@ -59,6 +62,17 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("auth", limiter =>
+    {
+        limiter.PermitLimit = 10;
+        limiter.Window = TimeSpan.FromMinutes(5);
+        limiter.QueueLimit = 0;
+        limiter.AutoReplenishment = true;
+    });
+});
 
 var app = builder.Build();
 app.UseMiddleware<ApiExceptionMiddleware>();
@@ -68,6 +82,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
