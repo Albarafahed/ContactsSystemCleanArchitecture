@@ -22,7 +22,16 @@ public static class DependencyInjection
             throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection using user secrets or the ConnectionStrings__DefaultConnection environment variable.");
 
         services.AddDbContext<ContactsDbContext>(options => options.UseSqlServer(connectionString));
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<JwtOptions>(options =>
+        {
+            options.Issuer = configuration["Jwt:Issuer"] ?? string.Empty;
+            options.Audience = configuration["Jwt:Audience"] ?? string.Empty;
+            options.Key = configuration["Jwt:Key"] ?? string.Empty;
+            if (int.TryParse(configuration["Jwt:AccessTokenMinutes"], out var accessMinutes))
+                options.AccessTokenMinutes = accessMinutes;
+            if (int.TryParse(configuration["Jwt:RefreshTokenDays"], out var refreshDays))
+                options.RefreshTokenDays = refreshDays;
+        });
         services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         services.AddIdentityCore<ApplicationUser>(options =>
@@ -39,7 +48,6 @@ public static class DependencyInjection
         })
         .AddRoles<IdentityRole>()
         .AddEntityFrameworkStores<ContactsDbContext>()
-        .AddSignInManager()
         .AddDefaultTokenProviders();
 
         services.AddScoped<IContactRepository, ContactRepository>();
