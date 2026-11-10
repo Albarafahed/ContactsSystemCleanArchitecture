@@ -13,7 +13,12 @@ public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refresh
         entity.Property(token => token.TokenHash).HasMaxLength(64).IsRequired();
         entity.Property(token => token.UserId).HasMaxLength(450).IsRequired();
         entity.Property(token => token.ReplacedByTokenHash).HasMaxLength(64);
-        entity.Property(token => token.RowVersion).IsRowVersion();
+        entity.Property(token => token.RowVersion)
+            .HasColumnType("varbinary(8)")
+            .HasMaxLength(8)
+            .IsRequired()
+            .IsConcurrencyToken()
+            .ValueGeneratedNever();
         entity.HasIndex(token => token.TokenHash).IsUnique();
         entity.HasIndex(token => new { token.UserId, token.ExpiresAtUtc });
         entity.HasOne(token => token.User)
