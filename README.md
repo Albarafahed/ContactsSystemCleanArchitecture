@@ -19,6 +19,9 @@ It demonstrates practical implementation of **Domain-Driven Design concepts**, *
 - Delete contacts.
 - Manage contact information.
 - Associate contacts with countries.
+- Validate required fields, field lengths, email format, phone characters, and date of birth.
+- Reject duplicate email addresses in application-level create and update operations.
+- Verify that the selected country exists before saving a contact.
 
 ### 🌍 Country Management
 
@@ -427,7 +430,7 @@ The database stores contact information and the relationships between contacts a
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Albarafahed/Contact.git
+git clone https://github.com/Albarafahed/ContactsSystemCleanArchitecture.git
 ```
 
 ### 2. Open the Solution
@@ -436,19 +439,16 @@ Open the solution file in Visual Studio.
 
 ### 3. Configure the Connection String
 
-Update the connection string in the API project's `appsettings.json`.
+Configure the connection string outside source control. The API reads the `ConnectionStrings:DefaultConnection` setting and intentionally does not include a real connection string in `appsettings.json`.
 
-Example:
+For local development, use .NET User Secrets from the API project directory:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=ContactsDB;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=.;Database=ContactsDB;Trusted_Connection=True;TrustServerCertificate=True;"
 ```
 
-Adjust the server name and database configuration according to your SQL Server instance.
+Alternatively, set the `ConnectionStrings__DefaultConnection` environment variable. Replace the server and database values with your own SQL Server configuration. Do not commit credentials or production connection strings.
 
 ### 4. Configure the Database
 
@@ -520,7 +520,6 @@ Potential improvements include:
 
 ### API
 
-- Request validation.
 - Pagination.
 - Filtering and searching.
 - API versioning.
@@ -539,6 +538,7 @@ Potential improvements include:
 - Authentication and Authorization.
 - JWT Bearer Authentication.
 - Role-Based Access Control (RBAC).
+- Refresh-token rotation and revocation.
 
 ### Testing
 
