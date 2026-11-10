@@ -23,12 +23,12 @@ public sealed class ContactService(
         return contacts.Select(MapToDto).ToList();
     }
 
-    public async Task<ContactDto?> SaveAsync(int id, SaveContactRequest request, string ownerUserId)
+    public async Task<ContactDto?> SaveAsync(int id, SaveContactRequest request, string? ownerUserId)
     {
         if (id < 0)
             throw new ArgumentOutOfRangeException(nameof(id), "Contact ID cannot be negative.");
-        if (string.IsNullOrWhiteSpace(ownerUserId))
-            throw new ArgumentException("Authenticated owner is required.", nameof(ownerUserId));
+        if (id == 0 && string.IsNullOrWhiteSpace(ownerUserId))
+            throw new ArgumentException("Authenticated owner is required to create a contact.", nameof(ownerUserId));
         if (!await countryRepository.ExistsByIdAsync(request.CountryId))
             throw new ArgumentException($"Country with ID {request.CountryId} does not exist.", nameof(request.CountryId));
 
@@ -39,7 +39,7 @@ public sealed class ContactService(
 
             var newContact = new Contact(request.FirstName, request.LastName, request.Email,
                 request.Phone, request.Address, request.DateOfBirth, request.CountryId, request.ImagePath);
-            newContact.AssignToUser(ownerUserId);
+            newContact.AssignToUser(ownerUserId!);
 
             if (!await contactRepository.AddAsync(newContact))
                 return null;
