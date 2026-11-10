@@ -123,6 +123,8 @@ public sealed class AuthService : IAuthService
             cancellationToken);
     }
 
+
+
     public async Task<AuthResponseDto> RefreshTokenAsync(
         RefreshTokenRequest request,
         CancellationToken cancellationToken = default)
@@ -135,43 +137,54 @@ public sealed class AuthService : IAuthService
         var tokenHash = _tokenService.HashRefreshToken(
             request.RefreshToken);
 
-        return await _unitOfWork.ExecuteInTransactionAsync(
+        var result = await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
                 var oldToken =
-                    await _refreshTokenRepository.GetByTokenHashAsync(
-                        tokenHash, ct);
+                    await _refreshTokenRepository.TryRevokeActiveAsync(
+                        tokenHash,
+                        DateTime.UtcNow,
+                        ct);
 
-                if (oldToken is null || !oldToken.IsActive())
+                if (oldToken is null)
                 {
                     throw new UnauthorizedAccessException(
                         "Invalid or expired refresh token.");
                 }
 
                 var user = await _userRepository.GetByIdAsync(
-                    oldToken.UserId, ct);
+                    oldToken.UserId,
+                    ct);
 
                 if (user is null || !user.IsActive)
                 {
-                    oldToken.Revoke();
-
-                    await _refreshTokenRepository.SaveChangesAsync(ct);
-
-                    throw new UnauthorizedAccessException(
-                        "This account is unavailable.");
+                    // The old token has already been revoked.
+                    // Returning allows the transaction to commit.
+                    return (
+                        Response: (AuthResponseDto?)null,
+                        AccountUnavailable: true
+                    );
                 }
-
-                // Rotate the refresh token.
-                oldToken.Revoke();
 
                 var response = await CreateAuthResponseAsync(user, ct);
 
-                await _refreshTokenRepository.SaveChangesAsync(ct);
-
-                return response;
+                return (
+                    Response: (AuthResponseDto?)response,
+                    AccountUnavailable: false
+                );
             },
             cancellationToken);
+
+        if (result.AccountUnavailable)
+        {
+            throw new UnauthorizedAccessException(
+                "This account is unavailable.");
+        }
+
+        return result.Response!;
     }
+
+
 
     public async Task LogoutAsync(
         RefreshTokenRequest request,

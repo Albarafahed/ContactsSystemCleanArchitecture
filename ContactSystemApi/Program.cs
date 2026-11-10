@@ -1,6 +1,7 @@
 using ContactsSystemApi.Middleware;
 using ContactsSystemApi.Services;
 using ContactsSystemApplication.Interfaces;
+using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,16 +18,35 @@ builder.Services.AddScoped<
     ICurrentUserService,
     CurrentUserService>();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("SecureCors", policy =>
+    {
+        policy
+            .WithOrigins(
+                "https://localhost:3000",
+                "https://localhost:5173"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 var app = builder.Build();
-app.UseMiddleware<GlobalExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+// Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.UseCors("SecureCors");
+
+// Global Exception Handling Middleware
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseAuthorization();
 

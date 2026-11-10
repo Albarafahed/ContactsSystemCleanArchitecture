@@ -42,6 +42,32 @@ public sealed class RefreshTokenRepository (ContactsDbContext context) : IRefres
             cancellationToken);
     }
 
+    public async Task<RefreshToken?> TryRevokeActiveAsync(
+        string tokenHash,
+        DateTime now,
+        CancellationToken cancellationToken = default)
+    {
+        var affectedRows = await context.RefreshTokens
+            .Where(token =>
+                token.TokenHash == tokenHash &&
+                token.RevokedAt == null &&
+                token.ExpiresAt > now)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    token => token.RevokedAt,
+                    now),
+                cancellationToken);
+
+        if (affectedRows != 1)
+            return null;
+
+        return await context.RefreshTokens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                token => token.TokenHash == tokenHash,
+                cancellationToken);
+    }
+
     public Task SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {

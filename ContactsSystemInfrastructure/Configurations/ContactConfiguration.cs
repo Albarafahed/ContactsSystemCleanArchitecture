@@ -47,7 +47,8 @@ public sealed class ContactConfiguration : IEntityTypeConfiguration<Contact>
             .HasMaxLength(500);
 
         entity.Property(e => e.OwnerUserId)
-            .HasColumnName("OwnerUserID");
+            .HasColumnName("OwnerUserID")
+            .IsRequired(false);
 
         entity.HasOne(e => e.Country)
             .WithMany(c => c.Contacts)

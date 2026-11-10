@@ -37,10 +37,13 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<ICountryRepository, CountryRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         // Application Services
         services.AddScoped<IContactService, ContactService>();
         services.AddScoped<ICountryService, CountryService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserService, UserService>();
 
         // Security Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();

@@ -14,3 +14,7 @@ obj/
 
 ## Misc
 *.log
+
+appsettings.json
+
+.github
