@@ -456,11 +456,15 @@ Alternatively, set the `ConnectionStrings__DefaultConnection` environment variab
 
 Make sure the database schema is available and matches the EF Core model configuration.
 
-### 5. Build and Run
+### 5. Configure Authentication
+
+Run `Database/AuthSchema.sql` against the backed-up `ContactsDB` database. Then set the JWT values using the User Secrets commands in the Authentication section below. The API intentionally fails at startup if the JWT signing key or database connection string is missing or invalid.
+
+### 6. Build and Run
 
 - Build the solution.
 - Set `ContactsSystemApi` as the Startup Project.
-- Run the application.
+- Run the application. Swagger is enabled in the Development environment.
 
 ---
 
@@ -564,7 +568,22 @@ Public registration always creates the `User` role; it does not allow clients to
 - Admin promotion is an operator-controlled database step.
 - Legacy contacts require an explicit ownership review before they can be assigned to users.
 - Access JWTs remain valid until their short expiry; logout revokes the refresh token, not already-issued access tokens.
-- The project still needs a full automated test suite and an actual build/run verification after applying the schema.
+- A focused Domain unit-test suite is included. Authentication, repository ownership, and SQL Server integration tests are still required.
+- GitHub Actions currently verifies the API build and Domain unit tests. A live SQL Server run after applying the schema has not yet been verified.
+
+---
+
+## 🧪 Automated Tests
+
+A focused Domain unit-test project is included at `ContactSystem.Tests`.
+
+Run the tests from the repository root:
+
+```bash
+dotnet test ContactSystem.Tests/ContactSystem.Tests.csproj --configuration Release
+```
+
+GitHub Actions also builds the API and runs these Domain tests on pushes and pull requests. Authentication flows, user-to-user ownership isolation, and SQL Server integration still need dedicated integration tests.
 
 ---
 
@@ -595,10 +614,10 @@ Potential improvements include:
 
 ### Testing
 
-- Unit Tests.
-- Integration Tests.
-- Application Service Tests.
-- Repository Tests.
+- Authentication endpoint integration tests.
+- Cross-user contact ownership tests.
+- SQL Server repository integration tests.
+- Application service tests.
 
 ---
 
