@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using ContactsSystemApi.Middleware;
 using ContactsSystemInfrastructure;
 using ContactsSystemInfrastructure.Identity;
@@ -42,6 +43,8 @@ if (string.IsNullOrWhiteSpace(jwt.Issuer) || string.IsNullOrWhiteSpace(jwt.Audie
 var signingKey = Encoding.UTF8.GetBytes(jwt.Key);
 if (signingKey.Length < 32)
     throw new InvalidOperationException("Set Jwt:Key to a secret containing at least 32 UTF-8 bytes.");
+if (jwt.AccessTokenMinutes <= 0 || jwt.RefreshTokenDays <= 0)
+    throw new InvalidOperationException("JWT access-token and refresh-token lifetimes must be positive.");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -65,13 +68,16 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddFixedWindowLimiter("auth", limiter =>
-    {
-        limiter.PermitLimit = 10;
-        limiter.Window = TimeSpan.FromMinutes(5);
-        limiter.QueueLimit = 0;
-        limiter.AutoReplenishment = true;
-    });
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
 });
 
 var app = builder.Build();
