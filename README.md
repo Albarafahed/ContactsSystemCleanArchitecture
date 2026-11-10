@@ -21,6 +21,7 @@ It demonstrates practical implementation of **Domain-Driven Design concepts**, *
 - Associate contacts with countries.
 - Validate required fields, field lengths, email format, phone characters, and date of birth.
 - Reject duplicate email addresses in application-level create and update operations.
+- Paginated contact listing with search and country filtering.
 - Verify that the selected country exists before saving a contact.
 
 ### 🌍 Country Management
@@ -529,6 +530,21 @@ The authentication implementation uses **ASP.NET Core Identity** with JWT Bearer
 | POST | `/api/auth/refresh` | Rotate a refresh token |
 | POST | `/api/auth/logout` | Revoke the supplied refresh token |
 
+### Paginated contacts
+
+Use `GET /api/contacts` with optional query parameters:
+
+```http
+GET /api/contacts?pageNumber=1&pageSize=20&search=ali&countryId=1
+```
+
+- `pageNumber` starts at 1 (default: 1).
+- `pageSize` defaults to 20 and is limited to 100.
+- `search` matches first name, last name, email, or phone (maximum 100 characters).
+- `countryId` filters by country.
+- The result includes `Items`, `PageNumber`, `PageSize`, `TotalCount`, `TotalPages`, `HasPreviousPage`, and `HasNextPage`.
+- User scoping is applied in the database query before pagination; Admin can query across all users.
+
 ### Security controls
 
 - Password hashing and validation are delegated to ASP.NET Core Identity.
@@ -536,7 +552,7 @@ The authentication implementation uses **ASP.NET Core Identity** with JWT Bearer
 - Access tokens are signed JWTs with issuer, audience, signature, and lifetime validation.
 - Refresh tokens are generated using a cryptographically secure random generator.
 - Only SHA-256 hashes of refresh tokens are stored in the database.
-- Refresh-token rotation revokes the previous token; a SQL Server rowversion protects against concurrent reuse.
+- Refresh-token rotation revokes the previous token; an application-managed 8-byte concurrency token prevents concurrent reuse.
 - Authentication endpoints use a fixed-window rate limit.
 - Contact endpoints require authentication. A regular User can access only contacts linked to their user ID; Admin can access all contacts.
 - Existing contacts remain unassigned (`UserId = NULL`) after the schema update and are not exposed to regular users.
@@ -568,14 +584,14 @@ Public registration always creates the `User` role; it does not allow clients to
 - Admin promotion is an operator-controlled database step.
 - Legacy contacts require an explicit ownership review before they can be assigned to users.
 - Access JWTs remain valid until their short expiry; logout revokes the refresh token, not already-issued access tokens.
-- A focused Domain unit-test suite is included. Authentication, repository ownership, and SQL Server integration tests are still required.
-- GitHub Actions currently verifies the API build and Domain unit tests. A live SQL Server run after applying the schema has not yet been verified.
+- Domain, SQLite-backed repository ownership, and API authentication integration tests are included.
+- GitHub Actions verifies the API build and all automated tests. A live SQL Server run after applying the schema has not yet been verified.
 
 ---
 
 ## 🧪 Automated Tests
 
-The `ContactSystem.Tests` project includes Domain unit tests and SQLite-backed repository tests for per-user contact ownership.
+The `ContactSystem.Tests` project includes Domain unit tests, SQLite-backed repository tests for ownership and pagination, and API integration tests for registration, login, refresh-token rotation, and logout.
 
 Run the tests from the repository root:
 
@@ -583,7 +599,7 @@ Run the tests from the repository root:
 dotnet test ContactSystem.Tests/ContactSystem.Tests.csproj --configuration Release
 ```
 
-GitHub Actions also builds the API and runs these Domain tests on pushes and pull requests. JWT registration/login/refresh/logout flows and production SQL Server integration still need dedicated integration tests. Ownership filtering, cross-user reads, cross-user deletes, and Admin-wide reads are covered by the SQLite-backed repository tests.
+GitHub Actions builds the API and runs the full test project on pushes and pull requests. The suite currently covers Domain validation, user ownership isolation, pagination/search, and the main JWT authentication flows. SQL Server integration against a real configured database is still required before production deployment.
 
 ---
 
@@ -593,8 +609,6 @@ Potential improvements include:
 
 ### API
 
-- Pagination.
-- Filtering and searching.
 - API versioning.
 - Swagger/OpenAPI documentation improvements.
 
@@ -614,10 +628,9 @@ Potential improvements include:
 
 ### Testing
 
-- Authentication endpoint integration tests.
-- JWT registration/login/refresh/logout integration tests.
 - SQL Server repository integration tests.
 - Application service tests.
+- Refresh-token concurrent replay tests.
 
 ---
 
