@@ -160,12 +160,12 @@ public sealed class AuthController(
 }
 
 public sealed record RegisterRequest(
-    [property: Required, EmailAddress, StringLength(256)] string Email,
-    [property: Required, StringLength(128, MinimumLength = 10)] string Password);
+    [param: Required, EmailAddress, StringLength(256)] string Email,
+    [param: Required, StringLength(128, MinimumLength = 10)] string Password);
 public sealed record LoginRequest(
-    [property: Required, EmailAddress, StringLength(256)] string Email,
-    [property: Required] string Password);
-public sealed record RefreshRequest([property: Required] string RefreshToken);
+    [param: Required, EmailAddress, StringLength(256)] string Email,
+    [param: Required] string Password);
+public sealed record RefreshRequest([param: Required] string RefreshToken);
 public sealed record AuthResponse(
     string AccessToken,
     string RefreshToken,
