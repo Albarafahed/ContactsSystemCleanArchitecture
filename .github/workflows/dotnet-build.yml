@@ -21,5 +21,7 @@ jobs:
           dotnet-version: 8.0.x
       - name: Restore
         run: dotnet restore ContactSystemApi/ContactsSystemApi.csproj
-      - name: Build
+      - name: Build API
         run: dotnet build ContactSystemApi/ContactsSystemApi.csproj --configuration Release --no-restore
+      - name: Run unit tests
+        run: dotnet test ContactSystem.Tests/ContactSystem.Tests.csproj --configuration Release
