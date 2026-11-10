@@ -94,7 +94,15 @@ public sealed class AuthController(
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddDays(jwtOptions.Value.RefreshTokenDays)
         });
-        await dbContext.SaveChangesAsync();
+
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Unauthorized(new { message = "Refresh token has already been used. Please sign in again." });
+        }
 
         return Ok(new AuthResponse(accessToken, replacementRaw,
             now.AddMinutes(jwtOptions.Value.AccessTokenMinutes),
@@ -124,6 +132,8 @@ public sealed class AuthController(
     {
         var now = DateTime.UtcNow;
         var refreshRaw = GenerateRefreshToken();
+        var accessToken = await jwtTokenService.CreateAccessTokenAsync(user);
+
         dbContext.RefreshTokens.Add(new RefreshToken
         {
             UserId = user.Id,
@@ -133,7 +143,6 @@ public sealed class AuthController(
         });
         await dbContext.SaveChangesAsync();
 
-        var accessToken = await jwtTokenService.CreateAccessTokenAsync(user);
         return new AuthResponse(accessToken, refreshRaw,
             now.AddMinutes(jwtOptions.Value.AccessTokenMinutes),
             now.AddDays(jwtOptions.Value.RefreshTokenDays));
