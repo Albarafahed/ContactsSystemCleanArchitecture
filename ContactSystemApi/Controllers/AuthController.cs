@@ -18,7 +18,6 @@ namespace ContactsSystemApi.Controllers;
 [EnableRateLimiting("auth")]
 public sealed class AuthController(
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager,
     RoleManager<IdentityRole> roleManager,
     ContactsDbContext dbContext,
     IJwtTokenService jwtTokenService,
@@ -58,12 +57,16 @@ public sealed class AuthController(
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var user = await userManager.FindByEmailAsync(request.Email.Trim());
-        if (user is null)
-            return Unauthorized(new { message = "Invalid email or password." });
-
-        var signIn = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
-        if (!signIn.Succeeded)
+        if (user is null || await userManager.IsLockedOutAsync(user))
             return Unauthorized(new { message = "Invalid email or password, or the account is locked." });
+
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            await userManager.AccessFailedAsync(user);
+            return Unauthorized(new { message = "Invalid email or password, or the account is locked." });
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
         return Ok(await CreateTokenResponseAsync(user));
     }
 
