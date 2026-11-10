@@ -63,6 +63,19 @@ public sealed class ContactOwnershipRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetByIdForUpdateAsync_WhenContactBelongsToAnotherUser_ReturnsNull()
+    {
+        var otherUsersContactId = await _context.Contacts
+            .Where(contact => contact.UserId == "user-2")
+            .Select(contact => contact.ContactId)
+            .SingleAsync();
+
+        var result = await _repository.GetByIdForUpdateAsync(otherUsersContactId, "user-1");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task ExistsAsync_WhenContactBelongsToAnotherUser_ReturnsFalse()
     {
         var otherUsersContactId = await _context.Contacts
