@@ -1,45 +1,62 @@
-﻿using ContactsSystemApplication.Interfaces;
+﻿
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
+using ContactsSystemInfrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContactsSystemInfrastructure.Repositories;
 
-public sealed class ContactRepository(ContactsDbContext context)
-   
+public sealed class ContactRepository (ContactsDbContext context) : IContactRepository
 {
-    public async Task<Contact?> GetByIdAsync(int id)=> await context.Contacts
-            .AsNoTracking()
-            .Include(c => c.Country)
-            .SingleOrDefaultAsync(c => c.ContactId == id);
-    public async Task<Contact?> GetByIdForUpdateAsync(int id)=>await context.Contacts.FindAsync(id);
+    
 
-
-    public async Task<List<Contact>> GetAllAsync()=>
-     await context.Contacts
-            .AsNoTracking()
-            .Include(c => c.Country)
-            .OrderBy(c => c.ContactId)
-            .ToListAsync();
-  
-    public async Task<bool> AddAsync(Contact contact)
-    {
-        await context.Contacts.AddAsync(contact);
-      return  await context.SaveChangesAsync()>0;
-    }
-
-    public async Task<bool> SaveChangesAsync()=>
-        await context.SaveChangesAsync() > 0;
-
-
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<IReadOnlyList<Contact>> GetAllAsync(
+        CancellationToken cancellationToken = default)
     {
         return await context.Contacts
-            .Where(c => c.ContactId == id)
-            .ExecuteDeleteAsync() > 0;
+            .AsNoTracking()
+            .OrderBy(contact => contact.ContactId)
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<IReadOnlyList<Contact>> GetByOwnerIdAsync(
+        int ownerUserId,
+        CancellationToken cancellationToken = default)
     {
-        return await context.Contacts.AnyAsync(c => c.ContactId == id);
+        return await context.Contacts
+            .AsNoTracking()
+            .Where(contact => contact.OwnerUserId == ownerUserId)
+            .OrderBy(contact => contact.ContactId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Contact?> GetByIdAsync(
+        int contactId,
+        CancellationToken cancellationToken = default)
+    {
+        return await context.Contacts
+            .FirstOrDefaultAsync(
+                contact => contact.ContactId == contactId,
+                cancellationToken);
+    }
+
+    public async Task AddAsync(
+        Contact contact,
+        CancellationToken cancellationToken = default)
+    {
+        await context.Contacts.AddAsync(
+            contact,
+            cancellationToken);
+    }
+
+    public void Delete(Contact contact)
+    {
+        context.Contacts.Remove(contact);
+    }
+
+    public Task SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return context.SaveChangesAsync(cancellationToken);
     }
 }
