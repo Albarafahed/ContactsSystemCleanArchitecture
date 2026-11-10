@@ -10,7 +10,7 @@ public sealed class RefreshToken
     public DateTime ExpiresAtUtc { get; set; }
     public DateTime? RevokedAtUtc { get; set; }
     public string? ReplacedByTokenHash { get; set; }
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    public byte[] RowVersion { get; set; } = System.Security.Cryptography.RandomNumberGenerator.GetBytes(8);
     public bool IsRevoked => RevokedAtUtc.HasValue;
     public bool IsExpired => DateTime.UtcNow >= ExpiresAtUtc;
 }
