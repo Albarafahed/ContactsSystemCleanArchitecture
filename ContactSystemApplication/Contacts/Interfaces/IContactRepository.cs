@@ -7,6 +7,7 @@ public interface IContactRepository
     Task<Contact?> GetByIdAsync(int id, string? ownerUserId);
     Task<Contact?> GetByIdForUpdateAsync(int id, string? ownerUserId);
     Task<List<Contact>> GetAllAsync(string? ownerUserId);
+    Task<(List<Contact> Items, int TotalCount)> GetPagedAsync(string? ownerUserId, string? search, int? countryId, int pageNumber, int pageSize);
     Task<bool> AddAsync(Contact contact);
     Task<bool> SaveChangesAsync();
     Task<bool> DeleteAsync(int id, string? ownerUserId);
