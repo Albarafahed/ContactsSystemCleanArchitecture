@@ -108,6 +108,37 @@ public sealed class ContactOwnershipRepositoryTests : IAsyncLifetime
         Assert.Equal(2, contacts.Count);
     }
 
+
+    [Fact]
+    public async Task GetPagedAsync_AppliesPageAndReturnsTotalCount()
+    {
+        var result = await _repository.GetPagedAsync(null, null, null, pageNumber: 2, pageSize: 1);
+
+        var contact = Assert.Single(result.Items);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal("two@example.com", contact.Email);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_SearchFiltersContacts()
+    {
+        var result = await _repository.GetPagedAsync(null, "one@example", null, pageNumber: 1, pageSize: 20);
+
+        var contact = Assert.Single(result.Items);
+        Assert.Equal("one@example.com", contact.Email);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_OwnerScopeDoesNotReturnOtherUsersContacts()
+    {
+        var result = await _repository.GetPagedAsync("user-1", null, null, pageNumber: 1, pageSize: 20);
+
+        var contact = Assert.Single(result.Items);
+        Assert.Equal("user-1", contact.UserId);
+        Assert.Equal(1, result.TotalCount);
+    }
+
     public async Task DisposeAsync()
     {
         await _context.DisposeAsync();
