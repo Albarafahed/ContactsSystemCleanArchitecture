@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Contacts\**" />
+    <EmbeddedResource Remove="Contacts\**" />
+    <None Remove="Contacts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ContactSystemDomain\ContactsSystemDomain.csproj" />
   </ItemGroup>
 

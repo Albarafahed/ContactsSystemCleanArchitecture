@@ -1,12 +1,11 @@
-﻿using ContactsSystemApplication.Contacts.Interfaces;
-using ContactsSystemApplication.Interfaces;
+﻿using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContactsSystemInfrastructure.Repositories;
 
 public sealed class ContactRepository(ContactsDbContext context)
-    : IContactRepository
+   
 {
     public async Task<Contact?> GetByIdAsync(int id)=> await context.Contacts
             .AsNoTracking()

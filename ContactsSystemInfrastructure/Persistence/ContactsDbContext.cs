@@ -10,6 +10,8 @@ public class ContactsDbContext : DbContext
     public DbSet<Contact> Contacts => Set<Contact>();
 
     public DbSet<Country> Countries => Set<Country>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,8 +1,8 @@
-﻿using ContactsSystemApplication.Contacts.Interfaces;
-using ContactsSystemApplication.Contacts.Services;
+﻿
 using ContactsSystemApplication.Countries.Interfaces;
 using ContactsSystemApplication.Countries.Services;
 using ContactsSystemApplication.Interfaces;
+using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +18,7 @@ namespace ContactsSystemInfrastructure
             if (string.IsNullOrWhiteSpace(connectionString))
                 throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection using user secrets or the ConnectionStrings__DefaultConnection environment variable.");
             services.AddDbContext<ContactsDbContext>(options => options.UseSqlServer(connectionString));
-            services.AddScoped<IContactRepository, ContactRepository>();
+            //services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IContactService, ContactService>();
 
             services.AddScoped<ICountryRepository, CountryRepository>();
