@@ -88,6 +88,7 @@ public sealed class AuthController(
         var replacementHash = HashToken(replacementRaw);
         storedToken.RevokedAtUtc = now;
         storedToken.ReplacedByTokenHash = replacementHash;
+        storedToken.RowVersion = RandomNumberGenerator.GetBytes(8);
 
         var accessToken = await jwtTokenService.CreateAccessTokenAsync(storedToken.User);
         dbContext.RefreshTokens.Add(new RefreshToken
