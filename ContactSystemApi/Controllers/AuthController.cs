@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,6 +7,7 @@ using ContactsSystemInfrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +15,7 @@ namespace ContactsSystemApi.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public sealed class AuthController(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
@@ -26,13 +29,7 @@ public sealed class AuthController(
     public async Task<IActionResult> Register(RegisterRequest request)
     {
         var email = request.Email.Trim();
-        var user = new ApplicationUser
-        {
-            UserName = email,
-            Email = email,
-            EmailConfirmed = false
-        };
-
+        var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = false };
         var created = await userManager.CreateAsync(user, request.Password);
         if (!created.Succeeded)
             return BadRequest(new { errors = created.Errors.Select(error => error.Description) });
@@ -53,7 +50,6 @@ public sealed class AuthController(
             await userManager.DeleteAsync(user);
             return Problem(statusCode: 500, title: "Could not assign the default user role.");
         }
-
         return Ok(await CreateTokenResponseAsync(user));
     }
 
@@ -68,7 +64,6 @@ public sealed class AuthController(
         var signIn = await signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
         if (!signIn.Succeeded)
             return Unauthorized(new { message = "Invalid email or password, or the account is locked." });
-
         return Ok(await CreateTokenResponseAsync(user));
     }
 
@@ -81,10 +76,8 @@ public sealed class AuthController(
 
         var now = DateTime.UtcNow;
         var tokenHash = HashToken(request.RefreshToken);
-        var storedToken = await dbContext.RefreshTokens
-            .Include(token => token.User)
+        var storedToken = await dbContext.RefreshTokens.Include(token => token.User)
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash);
-
         if (storedToken is null || storedToken.IsRevoked || storedToken.IsExpired)
             return Unauthorized(new { message = "Refresh token is invalid, expired, or revoked." });
 
@@ -101,11 +94,9 @@ public sealed class AuthController(
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddDays(jwtOptions.Value.RefreshTokenDays)
         });
-
         await dbContext.SaveChangesAsync();
-        return Ok(new AuthResponse(
-            accessToken,
-            replacementRaw,
+
+        return Ok(new AuthResponse(accessToken, replacementRaw,
             now.AddMinutes(jwtOptions.Value.AccessTokenMinutes),
             now.AddDays(jwtOptions.Value.RefreshTokenDays)));
     }
@@ -121,13 +112,11 @@ public sealed class AuthController(
         var tokenHash = HashToken(request.RefreshToken);
         var token = await dbContext.RefreshTokens.SingleOrDefaultAsync(item =>
             item.UserId == userId && item.TokenHash == tokenHash && item.RevokedAtUtc == null);
-
         if (token is not null)
         {
             token.RevokedAtUtc = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
         }
-
         return NoContent();
     }
 
@@ -145,9 +134,7 @@ public sealed class AuthController(
         await dbContext.SaveChangesAsync();
 
         var accessToken = await jwtTokenService.CreateAccessTokenAsync(user);
-        return new AuthResponse(
-            accessToken,
-            refreshRaw,
+        return new AuthResponse(accessToken, refreshRaw,
             now.AddMinutes(jwtOptions.Value.AccessTokenMinutes),
             now.AddDays(jwtOptions.Value.RefreshTokenDays));
     }
@@ -159,9 +146,13 @@ public sealed class AuthController(
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }
 
-public sealed record RegisterRequest(string Email, string Password);
-public sealed record LoginRequest(string Email, string Password);
-public sealed record RefreshRequest(string RefreshToken);
+public sealed record RegisterRequest(
+    [property: Required, EmailAddress, StringLength(256)] string Email,
+    [property: Required, StringLength(128, MinimumLength = 10)] string Password);
+public sealed record LoginRequest(
+    [property: Required, EmailAddress, StringLength(256)] string Email,
+    [property: Required] string Password);
+public sealed record RefreshRequest([property: Required] string RefreshToken);
 public sealed record AuthResponse(
     string AccessToken,
     string RefreshToken,
