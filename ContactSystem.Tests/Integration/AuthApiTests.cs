@@ -23,7 +23,7 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
 
         var register = await client.PostAsJsonAsync("/api/auth/register",
             new { email, password });
-        Assert.Equal(HttpStatusCode.OK, register.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.OK, register);
         var registered = await register.Content.ReadFromJsonAsync<AuthPayload>(JsonOptions);
         Assert.NotNull(registered);
         Assert.False(string.IsNullOrWhiteSpace(registered.AccessToken));
@@ -31,7 +31,7 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
 
         var login = await client.PostAsJsonAsync("/api/auth/login",
             new { email, password });
-        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.OK, login);
         var loggedIn = await login.Content.ReadFromJsonAsync<AuthPayload>(JsonOptions);
         Assert.NotNull(loggedIn);
         Assert.False(string.IsNullOrWhiteSpace(loggedIn.AccessToken));
@@ -50,7 +50,7 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
         var response = await client.PostAsJsonAsync("/api/auth/login",
             new { email, password = "WrongPassword123!" });
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.Unauthorized, response);
     }
 
     [Fact]
@@ -66,14 +66,14 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
 
         var refresh = await client.PostAsJsonAsync("/api/auth/refresh",
             new { refreshToken = initial.RefreshToken });
-        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.OK, refresh);
         var rotated = await refresh.Content.ReadFromJsonAsync<AuthPayload>(JsonOptions);
         Assert.NotNull(rotated);
         Assert.NotEqual(initial.RefreshToken, rotated.RefreshToken);
 
         var reuse = await client.PostAsJsonAsync("/api/auth/refresh",
             new { refreshToken = initial.RefreshToken });
-        Assert.Equal(HttpStatusCode.Unauthorized, reuse.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.Unauthorized, reuse);
     }
 
     [Fact]
@@ -91,11 +91,18 @@ public sealed class AuthApiTests(ContactsApiFactory factory)
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokens.AccessToken);
         var logout = await client.PostAsJsonAsync("/api/auth/logout",
             new { refreshToken = tokens.RefreshToken });
-        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.NoContent, logout);
 
         var refresh = await client.PostAsJsonAsync("/api/auth/refresh",
             new { refreshToken = tokens.RefreshToken });
-        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+        await AssertStatusCodeAsync(HttpStatusCode.Unauthorized, refresh);
+    }
+
+    private static async Task AssertStatusCodeAsync(HttpStatusCode expected, HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == expected,
+            $"Expected {(int)expected} ({expected}), got {(int)response.StatusCode} ({response.StatusCode}). Response: {body}");
     }
 
     private sealed record AuthPayload(
