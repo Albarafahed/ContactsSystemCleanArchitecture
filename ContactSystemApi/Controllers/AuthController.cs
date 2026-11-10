@@ -28,7 +28,7 @@ public sealed class AuthController(
     public async Task<IActionResult> Register(RegisterRequest request)
     {
         var email = request.Email.Trim();
-        var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = false };
+        var user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = false, LockoutEnabled = true };
         var created = await userManager.CreateAsync(user, request.Password);
         if (!created.Succeeded)
             return BadRequest(new { errors = created.Errors.Select(error => error.Description) });
