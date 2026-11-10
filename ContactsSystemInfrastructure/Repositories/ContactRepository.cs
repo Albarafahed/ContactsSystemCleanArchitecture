@@ -23,6 +23,38 @@ public sealed class ContactRepository(ContactsDbContext context) : IContactRepos
             .Where(c => ownerUserId == null || c.UserId == ownerUserId)
             .OrderBy(c => c.ContactId).ToListAsync();
 
+
+    public async Task<(List<Contact> Items, int TotalCount)> GetPagedAsync(
+        string? ownerUserId, string? search, int? countryId, int pageNumber, int pageSize)
+    {
+        IQueryable<Contact> query = context.Contacts.AsNoTracking().Include(contact => contact.Country);
+
+        if (ownerUserId is not null)
+            query = query.Where(contact => contact.UserId == ownerUserId);
+
+        if (countryId.HasValue)
+            query = query.Where(contact => contact.CountryId == countryId.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(contact =>
+                contact.FirstName.Contains(term) ||
+                contact.LastName.Contains(term) ||
+                contact.Email.Contains(term) ||
+                contact.Phone.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderBy(contact => contact.ContactId)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task<bool> AddAsync(Contact contact)
     {
         await context.Contacts.AddAsync(contact);
