@@ -1,5 +1,5 @@
 ﻿
-
+using ContactsSystemApplication.AuditLogs.Interfaces;
 using ContactsSystemApplication.DTO;
 using ContactsSystemApplication.Exceptions;
 using ContactsSystemApplication.Interfaces;
@@ -12,13 +12,19 @@ public sealed class ContactService : IContactService
 {
     private readonly IContactRepository _contactRepository;
     private readonly ICurrentUserService _currentUser;
+    private readonly IAuditLogService _auditLogService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public ContactService(
         IContactRepository contactRepository,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IAuditLogService auditLogService,
+        IUnitOfWork unitOfWork)
     {
         _contactRepository = contactRepository;
         _currentUser = currentUser;
+        _auditLogService = auditLogService;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<IReadOnlyList<ContactDto>> GetAllAsync(
@@ -49,8 +55,9 @@ public sealed class ContactService : IContactService
         CancellationToken cancellationToken = default)
     {
         EnsureAuthenticated();
-
         ArgumentNullException.ThrowIfNull(request);
+
+        var userId = GetCurrentUserId();
 
         var contact = new Contact(
             request.FirstName,
@@ -63,12 +70,25 @@ public sealed class ContactService : IContactService
             request.ImagePath);
 
         // Ownership comes from the authenticated user.
-        contact.AssignToUser(GetCurrentUserId());
+        contact.AssignToUser(userId);
 
-        await _contactRepository.AddAsync(
-            contact, cancellationToken);
+        await _unitOfWork.ExecuteInTransactionAsync(
+            async ct =>
+            {
+                await _contactRepository.AddAsync(contact, ct);
 
-        await _contactRepository.SaveChangesAsync(
+                await _contactRepository.SaveChangesAsync(ct);
+
+                await LogAuditAsync(
+                    userId,
+                    "Create",
+                    "Contact",
+                    contact.ContactId.ToString(),
+                    "Success",
+                    ct);
+
+                return true;
+            },
             cancellationToken);
 
         return MapToDto(contact);
@@ -84,6 +104,8 @@ public sealed class ContactService : IContactService
         var contact = await GetAccessibleContactAsync(
             contactId, cancellationToken);
 
+        var userId = GetCurrentUserId();
+
         contact.SetFirstName(request.FirstName);
         contact.SetLastName(request.LastName);
         contact.SetEmail(request.Email);
@@ -94,7 +116,21 @@ public sealed class ContactService : IContactService
         contact.SetImagePath(request.ImagePath);
 
         // OwnerUserId is never changed during an update.
-        await _contactRepository.SaveChangesAsync(
+        await _unitOfWork.ExecuteInTransactionAsync(
+            async ct =>
+            {
+                await _contactRepository.SaveChangesAsync(ct);
+
+                await LogAuditAsync(
+                    userId,
+                    "Update",
+                    "Contact",
+                    contact.ContactId.ToString(),
+                    "Success",
+                    ct);
+
+                return true;
+            },
             cancellationToken);
 
         return MapToDto(contact);
@@ -107,14 +143,34 @@ public sealed class ContactService : IContactService
         var contact = await GetAccessibleContactAsync(
             contactId, cancellationToken);
 
-        _contactRepository.Delete(contact);
+        var userId = GetCurrentUserId();
 
-        return await _contactRepository.SaveChangesAsync(
-              cancellationToken);
+        return await _unitOfWork.ExecuteInTransactionAsync(
+            async ct =>
+            {
+                _contactRepository.Delete(contact);
+
+                var deleted = await _contactRepository.SaveChangesAsync(ct);
+
+                if (deleted)
+                {
+                    await LogAuditAsync(
+                        userId,
+                        "Delete",
+                        "Contact",
+                        contact.ContactId.ToString(),
+                        "Success",
+                        ct);
+                }
+
+                return deleted;
+            },
+            cancellationToken);
     }
+
     public async Task<bool> ExistsAsync(
-    int contactId,
-    CancellationToken cancellationToken = default)
+        int contactId,
+        CancellationToken cancellationToken = default)
     {
         EnsureAuthenticated();
 
@@ -139,6 +195,7 @@ public sealed class ContactService : IContactService
 
         return true;
     }
+
     private async Task<Contact> GetAccessibleContactAsync(
         int contactId,
         CancellationToken cancellationToken)
@@ -158,7 +215,7 @@ public sealed class ContactService : IContactService
                 "Contact was not found.");
 
         if (!_currentUser.IsAdmin &&
-      contact.OwnerUserId != GetCurrentUserId())
+            contact.OwnerUserId != GetCurrentUserId())
         {
             throw new ForbiddenAccessException(
                 "You are not allowed to access this contact.");
@@ -167,6 +224,23 @@ public sealed class ContactService : IContactService
         return contact;
     }
 
+    private Task LogAuditAsync(
+        int? userId,
+        string action,
+        string entityName,
+        string? entityId,
+        string outcome,
+        CancellationToken cancellationToken)
+    {
+        return _auditLogService.LogAsync(
+            userId,
+            action,
+            entityName,
+            entityId,
+            outcome,
+            saveImmediately: true,
+            cancellationToken: cancellationToken);
+    }
 
     private void EnsureAuthenticated()
     {
@@ -180,7 +254,6 @@ public sealed class ContactService : IContactService
 
     private int GetCurrentUserId()
     {
-
         EnsureAuthenticated();
         return _currentUser.UserId!.Value;
     }
