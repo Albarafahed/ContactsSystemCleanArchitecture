@@ -1,10 +1,12 @@
 ﻿using ContactsSystemApplication.Countries.DTOs;
 using ContactsSystemApplication.Countries.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Controllers
 {
+    [Authorize(Roles = "Admin,User")]
     [Route("api/Countries")]
     [ApiController]
     public class CountriesController(ICountryService countryService) : ControllerBase

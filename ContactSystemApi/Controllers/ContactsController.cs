@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,User")]
 [Route("api/Contacts")]
 [ApiController]
 public class ContactsController(IContactService contactService)

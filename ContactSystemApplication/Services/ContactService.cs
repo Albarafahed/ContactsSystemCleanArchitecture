@@ -47,7 +47,7 @@ public sealed class ContactService : IContactService
         SaveContactRequest request,
         CancellationToken cancellationToken = default)
     {
-        //EnsureAuthenticated();
+        EnsureAuthenticated();
 
         ArgumentNullException.ThrowIfNull(request);
 
@@ -142,19 +142,19 @@ public sealed class ContactService : IContactService
 
     private void EnsureAuthenticated()
     {
-        //if (!_currentUser.IsAuthenticated ||
-        //    !_currentUser.UserId.HasValue)
-        //{
-        //    throw new UnauthorizedAccessException(
-        //        "Authentication is required.");
-        //}
+        if (!_currentUser.IsAuthenticated ||
+            !_currentUser.UserId.HasValue)
+        {
+            throw new UnauthorizedAccessException(
+                "Authentication is required.");
+        }
     }
 
     private int GetCurrentUserId()
     {
-        return 1;
-        //EnsureAuthenticated();
-        //return _currentUser.UserId!.Value;
+
+        EnsureAuthenticated();
+        return _currentUser.UserId!.Value;
     }
 
     private static ContactDto MapToDto(Contact contact)

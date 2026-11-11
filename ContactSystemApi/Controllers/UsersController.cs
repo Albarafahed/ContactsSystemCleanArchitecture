@@ -2,10 +2,12 @@
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemApplication.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Controllers;
 
+[Authorize(Roles = "Admin")]
 [Route("api/Users")]
 [ApiController]
 public class UsersController(IUserService userService) : ControllerBase
