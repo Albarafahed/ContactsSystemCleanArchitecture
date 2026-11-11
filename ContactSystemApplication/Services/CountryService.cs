@@ -1,5 +1,5 @@
-﻿using ContactsSystemApplication.Countries.DTOs;
-using ContactsSystemApplication.Countries.Interfaces;
+﻿using ContactsSystemApplication.DTO;
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ContactsSystemApplication.Countries.Services
+namespace ContactsSystemApplication.Services
 {
     public class CountryService(ICountryRepository countryRepository) : ICountryService
     {

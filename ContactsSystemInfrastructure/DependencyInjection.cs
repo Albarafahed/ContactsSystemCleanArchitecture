@@ -1,6 +1,4 @@
-﻿using ContactsSystemApplication.Countries.Interfaces;
-using ContactsSystemApplication.Countries.Services;
-using ContactsSystemApplication.Interfaces;
+﻿using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure.Persistence;
 using ContactsSystemInfrastructure.Repositories;

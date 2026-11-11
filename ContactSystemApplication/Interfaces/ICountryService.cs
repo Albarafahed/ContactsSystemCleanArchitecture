@@ -1,6 +1,6 @@
-﻿using ContactsSystemApplication.Countries.DTOs;
+﻿using ContactsSystemApplication.DTO;
 
-namespace ContactsSystemApplication.Countries.Interfaces
+namespace ContactsSystemApplication.Interfaces
 {
     public interface ICountryService
     {

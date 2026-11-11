@@ -1,7 +1,6 @@
-﻿using ContactsSystemApplication.Countries.DTOs;
-using ContactsSystemDomain.Entities;
+﻿using ContactsSystemDomain.Entities;
 
-namespace ContactsSystemApplication.Countries.Interfaces
+namespace ContactsSystemApplication.Interfaces
 {
     public interface ICountryRepository
     {

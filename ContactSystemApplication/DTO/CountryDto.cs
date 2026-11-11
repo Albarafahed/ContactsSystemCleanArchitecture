@@ -1,4 +1,4 @@
-﻿namespace ContactsSystemApplication.Countries.DTOs
+﻿namespace ContactsSystemApplication.DTO
 {
     public sealed class CountryDto
     {

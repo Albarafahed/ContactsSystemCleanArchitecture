@@ -1,5 +1,5 @@
-﻿using ContactsSystemApplication.Countries.DTOs;
-using ContactsSystemApplication.Countries.Interfaces;
+﻿using ContactsSystemApplication.DTO;
+using ContactsSystemApplication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
