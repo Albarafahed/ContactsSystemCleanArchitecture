@@ -2,10 +2,12 @@
 using ContactsSystemApplication.DTO;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactsSystemApi.Controllers;
 
+[Authorize]
 [Route("api/Contacts")]
 [ApiController]
 public class ContactsController(IContactService contactService)

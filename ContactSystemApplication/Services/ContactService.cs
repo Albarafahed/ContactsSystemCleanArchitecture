@@ -23,7 +23,7 @@ public sealed class ContactService : IContactService
     public async Task<IReadOnlyList<ContactDto>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        //EnsureAuthenticated();
+        EnsureAuthenticated();
 
         var contacts = _currentUser.IsAdmin
             ? await _contactRepository.GetAllAsync(cancellationToken)
