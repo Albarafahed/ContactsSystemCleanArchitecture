@@ -1,5 +1,6 @@
 ﻿
 using ContactsSystemApplication.Auth;
+using ContactsSystemApplication.AuditLogs.Interfaces;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;
@@ -15,6 +16,7 @@ public sealed class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IAuditLogService _auditLogService;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
@@ -24,6 +26,7 @@ public sealed class AuthService : IAuthService
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IUnitOfWork unitOfWork,
+        IAuditLogService auditLogService,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
@@ -32,6 +35,7 @@ public sealed class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
+        _auditLogService = auditLogService;
         _logger = logger;
     }
 
@@ -53,6 +57,15 @@ public sealed class AuthService : IAuthService
         if (await _userRepository.EmailExistsAsync(
             email, cancellationToken))
         {
+            await LogAuditAsync(
+                null,
+                "Register",
+                "User",
+                null,
+                "Failure",
+                true,
+                cancellationToken);
+
             _logger.LogWarning(
                 "Registration failed because the email is already registered.");
 
@@ -87,7 +100,18 @@ public sealed class AuthService : IAuthService
 
                 await _contactRepository.SaveChangesAsync(ct);
 
-                return await CreateAuthResponseAsync(user, ct);
+                var response = await CreateAuthResponseAsync(user, ct);
+
+                await LogAuditAsync(
+                    user.UserId,
+                    "Register",
+                    "User",
+                    user.UserId.ToString(),
+                    "Success",
+                    true,
+                    ct);
+
+                return response;
             },
             cancellationToken);
 
@@ -118,6 +142,15 @@ public sealed class AuthService : IAuthService
             !_passwordHasher.VerifyPassword(
                 request.Password, user.PasswordHash))
         {
+            await LogAuditAsync(
+                null,
+                "Login",
+                "User",
+                null,
+                "Failure",
+                true,
+                cancellationToken);
+
             _logger.LogWarning(
                 "Login failed due to invalid credentials.");
 
@@ -127,6 +160,15 @@ public sealed class AuthService : IAuthService
 
         if (!user.IsActive)
         {
+            await LogAuditAsync(
+                user.UserId,
+                "Login",
+                "User",
+                user.UserId.ToString(),
+                "Failure",
+                true,
+                cancellationToken);
+
             _logger.LogWarning(
                 "Login attempt rejected for inactive account. UserId: {UserId}",
                 user.UserId);
@@ -136,7 +178,21 @@ public sealed class AuthService : IAuthService
         }
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(
-            ct => CreateAuthResponseAsync(user, ct),
+            async ct =>
+            {
+                var response = await CreateAuthResponseAsync(user, ct);
+
+                await LogAuditAsync(
+                    user.UserId,
+                    "Login",
+                    "User",
+                    user.UserId.ToString(),
+                    "Success",
+                    true,
+                    ct);
+
+                return response;
+            },
             cancellationToken);
 
         _logger.LogInformation(
@@ -158,46 +214,81 @@ public sealed class AuthService : IAuthService
         var tokenHash = _tokenService.HashRefreshToken(
             request.RefreshToken);
 
-        var result = await _unitOfWork.ExecuteInTransactionAsync(
-            async ct =>
-            {
-                var oldToken =
-                    await _refreshTokenRepository.TryRevokeActiveAsync(
-                        tokenHash,
-                        DateTime.UtcNow,
+        (AuthResponseDto? Response, bool AccountUnavailable, int UserId) result;
+
+        try
+        {
+            result = await _unitOfWork.ExecuteInTransactionAsync(
+                async ct =>
+                {
+                    var oldToken =
+                        await _refreshTokenRepository.TryRevokeActiveAsync(
+                            tokenHash,
+                            DateTime.UtcNow,
+                            ct);
+
+                    if (oldToken is null)
+                    {
+                        _logger.LogWarning(
+                            "Refresh token renewal rejected: invalid, expired, or revoked token.");
+
+                        throw new UnauthorizedAccessException(
+                            "Invalid or expired refresh token.");
+                    }
+
+                    var user = await _userRepository.GetByIdAsync(
+                        oldToken.UserId, ct);
+
+                    if (user is null || !user.IsActive)
+                    {
+                        await LogAuditAsync(
+                            oldToken.UserId,
+                            "RefreshToken",
+                            "RefreshToken",
+                            null,
+                            "Failure",
+                            true,
+                            ct);
+
+                        return (
+                            Response: (AuthResponseDto?)null,
+                            AccountUnavailable: true,
+                            UserId: oldToken.UserId
+                        );
+                    }
+
+                    var response = await CreateAuthResponseAsync(user, ct);
+
+                    await LogAuditAsync(
+                        user.UserId,
+                        "RefreshToken",
+                        "RefreshToken",
+                        null,
+                        "Success",
+                        true,
                         ct);
 
-                if (oldToken is null)
-                {
-                    _logger.LogWarning(
-                        "Refresh token renewal rejected: invalid, expired, or revoked token.");
-
-                    throw new UnauthorizedAccessException(
-                        "Invalid or expired refresh token.");
-                }
-
-                var user = await _userRepository.GetByIdAsync(
-                    oldToken.UserId,
-                    ct);
-
-                if (user is null || !user.IsActive)
-                {
                     return (
-                        Response: (AuthResponseDto?)null,
-                        AccountUnavailable: true,
-                        UserId: oldToken.UserId
+                        Response: (AuthResponseDto?)response,
+                        AccountUnavailable: false,
+                        UserId: user.UserId
                     );
-                }
+                },
+                cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            await LogAuditAsync(
+                null,
+                "RefreshToken",
+                "RefreshToken",
+                null,
+                "Failure",
+                true,
+                cancellationToken);
 
-                var response = await CreateAuthResponseAsync(user, ct);
-
-                return (
-                    Response: (AuthResponseDto?)response,
-                    AccountUnavailable: false,
-                    UserId: user.UserId
-                );
-            },
-            cancellationToken);
+            throw;
+        }
 
         if (result.AccountUnavailable)
         {
@@ -231,10 +322,22 @@ public sealed class AuthService : IAuthService
         var revokedToken = await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
-                return await _refreshTokenRepository.TryRevokeActiveAsync(
-                    tokenHash,
-                    DateTime.UtcNow,
+                var token =
+                    await _refreshTokenRepository.TryRevokeActiveAsync(
+                        tokenHash,
+                        DateTime.UtcNow,
+                        ct);
+
+                await LogAuditAsync(
+                    token?.UserId,
+                    "Logout",
+                    "RefreshToken",
+                    null,
+                    token is not null ? "Success" : "Failure",
+                    true,
                     ct);
+
+                return token;
             },
             cancellationToken);
 
@@ -290,6 +393,25 @@ public sealed class AuthService : IAuthService
                 IsActive = user.IsActive
             }
         };
+    }
+
+    private Task LogAuditAsync(
+        int? userId,
+        string action,
+        string entityName,
+        string? entityId,
+        string outcome,
+        bool saveImmediately,
+        CancellationToken cancellationToken)
+    {
+        return _auditLogService.LogAsync(
+            userId,
+            action,
+            entityName,
+            entityId,
+            outcome,
+            saveImmediately: saveImmediately,
+            cancellationToken: cancellationToken);
     }
 
     private static void ValidatePassword(string password)

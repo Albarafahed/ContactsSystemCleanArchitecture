@@ -1,4 +1,5 @@
-﻿using ContactsSystemApplication.AuditLogs.Services;
+﻿using ContactsSystemApplication.AuditLogs.Interfaces;
+using ContactsSystemApplication.AuditLogs.Services;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure.Persistence;
