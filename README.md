@@ -1,49 +1,83 @@
-# 📇 Contacts Management System
+# Contacts Management System
 
-A Contacts Management System built with **C#**, **.NET 8**, **ASP.NET Core Web API**, **Entity Framework Core**, and **SQL Server**, following **Clean Architecture** principles.
+A secure Contacts Management RESTful API built with **C#, .NET 8, ASP.NET Core Web API, Entity Framework Core, and SQL Server**, following **Clean Architecture** principles.
 
-The project focuses on building a maintainable and extensible backend application by separating business rules, application logic, infrastructure concerns, and API responsibilities into independent layers.
-
-It demonstrates practical implementation of **Domain-Driven Design concepts**, **Repository Pattern**, **Dependency Injection**, **DTOs**, **Asynchronous Programming**, and **Entity Framework Core Change Tracking**.
+The project focuses on building a maintainable backend application with clear separation of concerns, domain-driven business rules, secure authentication and authorization, controlled data access, and activity auditing.
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 👥 Contact Management
-
-- Retrieve contacts.
+### Contact Management
+- Retrieve all accessible contacts.
 - Retrieve a contact by ID.
-- Create new contacts.
+- Create contacts.
 - Update existing contacts.
 - Delete contacts.
-- Manage contact information.
 - Associate contacts with countries.
+- Enforce contact ownership.
 
-### 🌍 Country Management
-
+### Country Management
 - Retrieve country information.
 - Associate contacts with countries.
-- Maintain relationships between contacts and countries.
+- Maintain contact-country relationships.
 
-### 🛡️ Domain Business Rules
+### Authentication & Authorization
+- JWT Bearer Authentication.
+- User registration and login.
+- Role-Based Access Control (RBAC).
+- Admin and User roles.
+- Ownership-based data access.
+- Secure refresh token management.
+- Refresh token rotation and revocation.
+- Logout and session invalidation.
 
-- Encapsulate business rules inside Domain Entities.
-- Control modifications through domain methods.
-- Protect entity state from invalid changes.
-- Keep business logic independent of infrastructure and API concerns.
+### API Security
+- HTTPS configuration.
+- CORS configuration.
+- Rate Limiting.
+- Password hashing.
+- Claims-based authorization.
+- Centralized exception handling.
+- Protection of user-owned contact data.
 
-### 🌐 RESTful API
+### Logging & Auditing
+- Record authentication events.
+- Record contact management activities.
+- Track the user responsible for an operation.
+- Record the affected entity and its identifier.
+- Store operation outcomes and UTC timestamps.
+- Associate audit events with Trace IDs when available.
+- Admin-only Audit Logs API.
+- Pagination and filtering for audit records.
 
-- Expose contact operations through HTTP endpoints.
-- Use HTTP methods according to their intended purpose.
-- Return appropriate HTTP status codes.
-- Handle exceptions through centralized exception middleware.
-- Transfer data using DTOs instead of exposing domain entities directly.
+### Audit Logs API
+
+Administrators can retrieve audit records through:
+
+`GET /api/AuditLogs`
+
+Supported query parameters:
+
+| Parameter | Description |
+|---|---|
+| userId | Filter by user ID |
+| action | Filter by operation |
+| entityName | Filter by entity |
+| fromUtc | Start date in UTC |
+| toUtc | End date in UTC |
+| pageNumber | Page number |
+| pageSize | Number of records per page |
+
+Example:
+
+`GET /api/AuditLogs?userId=1&entityName=Contact&action=Update&pageNumber=1&pageSize=10`
+
+Access is restricted to users with the Admin role.
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Category | Technology |
 |---|---|
@@ -53,368 +87,187 @@ It demonstrates practical implementation of **Domain-Driven Design concepts**, *
 | ORM | Entity Framework Core |
 | Database | Microsoft SQL Server |
 | Architecture | Clean Architecture |
-| Design Pattern | Repository Pattern |
-| Dependency Injection | Microsoft.Extensions.DependencyInjection |
-| Data Transfer | DTOs |
+| Data Access | Repository Pattern |
+| Transactions | Unit of Work |
+| Authentication | JWT Bearer |
+| Authorization | RBAC & Ownership-Based |
+| Security | Password Hashing, Rate Limiting |
+| Logging | Audit Logging |
 | Querying | LINQ |
-| Programming | Asynchronous Programming |
+| API Documentation | Swagger / OpenAPI |
 | IDE | Visual Studio 2022 |
 | Version Control | Git & GitHub |
 
 ---
 
-## 🏛️ Architecture
+## Architecture
 
-The solution follows **Clean Architecture**, separating the application into four main projects.
-
-Each layer has a specific responsibility, and dependencies are organized to keep the Domain independent of external technologies.
-
-### Architecture Overview
+The solution follows Clean Architecture with four main projects.
 
 ```text
-                 +-------------------------------+
-                 |       ContactsSystemApi       |
-                 |                               |
-                 | Controllers / Middleware      |
-                 +---------------+---------------+
-                                 |
-                                 ▼
-                 +-------------------------------+
-                 |   ContactsSystemApplication  |
-                 |                               |
-                 | Services / DTOs / Requests   |
-                 | Interfaces                   |
-                 +---------------+---------------+
-                                 |
-                                 ▼
-                 +-------------------------------+
-                 |     ContactsSystemDomain     |
-                 |                               |
-                 | Entities / Business Rules    |
-                 +-------------------------------+
-
-                                 ▲
-                                 |
-                 +-------------------------------+
-                 | ContactsSystemInfrastructure |
-                 |                               |
-                 | EF Core / DbContext          |
-                 | Repositories / Data Access   |
-                 +-------------------------------+
-```
-
-*Note: Infrastructure implements the interfaces defined by the inner layers. The API is the application's entry point and composes the dependencies through Dependency Injection.*
-
-### Solution Projects
-
-| Project | Responsibility |
-|---|---|
-| **ContactsSystemDomain** | Domain entities and business rules |
-| **ContactsSystemApplication** | Application services, DTOs, requests, and interfaces |
-| **ContactsSystemInfrastructure** | EF Core, DbContext, repository implementations, and database access |
-| **ContactsSystemApi** | RESTful API, controllers, middleware, and application configuration |
-
----
-
-## 🔄 Data Flow
-
-A typical request follows this flow:
-
-```text
-Client
-  |
-  ▼
-ASP.NET Core Web API
-  |
-  ▼
-Controller
-  |
-  ▼
-Application Service
-  |
-  ▼
-Repository Interface
-  |
-  ▼
-Repository Implementation
-  |
-  ▼
-Entity Framework Core
-  |
-  ▼
-SQL Server
-```
-
-The API Controller communicates with the Application layer rather than accessing the database directly.
-
-The Application layer depends on abstractions, while Infrastructure provides their concrete implementations.
-
-This separation reduces coupling and makes the application easier to maintain and test.
-
----
-## 🎬 Project Demo
-
-A demonstration video is included in the repository:
-
-```text
-Demo.wmv
-```
-
-The video provides a visual demonstration of the application.
-
----
-## 🧱 Project Responsibilities
-
-### 1. ContactsSystemDomain
-
-The Domain project contains the core business entities and rules.
-
-**Responsibilities:**
-
-- Define domain entities.
-- Encapsulate business rules.
-- Protect entity state.
-- Control modifications through domain methods.
-- Remain independent of EF Core and ASP.NET Core.
-
-**Example structure:**
-
-```text
-ContactsSystemDomain
+ContactsSystemCleanArch
 │
-└── Entities
-    └── Contact.cs
-```
-
-Domain entities are responsible for maintaining valid business states rather than allowing arbitrary modifications.
-
-### 2. ContactsSystemApplication
-
-The Application project coordinates the application's use cases.
-
-**Responsibilities:**
-
-- Implement application services.
-- Define repository interfaces.
-- Define service interfaces.
-- Define DTOs and request models.
-- Coordinate application operations.
-- Keep API and infrastructure details outside the application logic.
-
-**Example structure:**
-
-```text
-ContactsSystemApplication
+├── ContactSystemApi
+│   ├── Controllers
+│   ├── Middleware
+│   ├── Services
+│   ├── Program.cs
+│   └── appsettings.json
 │
-├── Contacts
-│   ├── Dtos
-│   ├── Requests
+├── ContactsSystemApplication
+│   ├── AuditLogs
+│   ├── Contacts
+│   ├── Countries
 │   ├── Interfaces
+│   ├── Requests
 │   └── Services
-│       └── ContactService.cs
 │
-└── Interfaces
+├── ContactsSystemDomain
+│   └── Entities
+│
+└── ContactsSystemInfrastructure
+    ├── Persistence
+    │   ├── Configurations
+    │   └── ContactsDbContext.cs
+    ├── Repositories
+    └── Security
 ```
 
-The Application layer communicates with repositories through interfaces rather than depending on their implementations.
+### Layer Responsibilities
 
-### 3. ContactsSystemInfrastructure
+**1. Domain Layer**
+- Contains core domain entities.
+- Encapsulates business rules.
+- Controls entity state through domain methods.
+- Remains independent of infrastructure and API concerns.
 
-The Infrastructure project implements data access and external technical concerns.
+**2. Application Layer**
+- Contains application services and use cases.
+- Defines repository and service interfaces.
+- Contains DTOs and request models.
+- Coordinates business operations.
+- Defines audit logging and query abstractions.
 
-**Responsibilities:**
+**3. Infrastructure Layer**
+- Implements repository interfaces.
+- Configures Entity Framework Core.
+- Provides database access through DbContext.
+- Implements persistence and security-related services.
+- Handles database configurations and relationships.
 
-- Configure Entity Framework Core.
-- Define the DbContext.
-- Implement repository interfaces.
-- Execute database queries.
-- Persist changes to SQL Server.
-- Configure entity mappings and relationships.
+**4. API Layer**
+- Exposes RESTful endpoints.
+- Handles HTTP requests and responses.
+- Configures authentication and authorization.
+- Registers application dependencies.
+- Uses middleware for centralized exception handling.
 
-**Example structure:**
+### Dependency Direction
 
-```text
-ContactsSystemInfrastructure
-│
-├── Data
-│   └── ContactsDbContext.cs
-│
-├── Models
-│
-└── Repositories
-    └── ContactRepository.cs
-```
-
-Infrastructure is responsible for translating application data operations into database operations.
-
-### 4. ContactsSystemApi
-
-The API project is the application's entry point.
-
-**Responsibilities:**
-
-- Expose RESTful endpoints.
-- Handle HTTP requests and responses.
-- Receive request models.
-- Call application services.
-- Configure Dependency Injection.
-- Configure middleware.
-- Handle centralized exception responses.
-
-**Example structure:**
-
-```text
-ContactsSystemApi
-│
-├── Controllers
-│   └── ContactsController.cs
-│
-├── Middleware
-│   └── ApiExceptionMiddleware.cs
-│
-├── Program.cs
-└── appsettings.json
-```
+The Application layer depends on Domain abstractions and entities. Infrastructure implements Application interfaces, while the API acts as the application's entry point and composes dependencies through Dependency Injection.
 
 ---
 
-## 🧩 Key Design Patterns and Principles
+## Security Architecture
 
-### Clean Architecture
+The project implements security through the following layers:
 
-Separates business logic from technical implementation details.
+| Layer | Security Mechanism |
+|---|---|
+| 1 | HTTPS & CORS |
+| 2 | JWT Authentication |
+| 3 | Role-Based Authorization |
+| 4 | Ownership-Based Authorization |
+| 5 | Refresh Tokens & Logout |
+| 6 | Rate Limiting |
+| 7 | Logging & Auditing |
+
+### Ownership Protection
+
+Contact ownership is assigned using the authenticated user's identity.
+
+- Users can access their own contacts.
+- Administrators can access contacts according to their administrative permissions.
+- Users cannot change contact ownership through update requests.
+- Unauthorized access to another user's contact is rejected.
+
+### Password & Session Security
+
+- Passwords are stored using password hashing.
+- Access tokens are used for authenticated API requests.
+- Refresh tokens support session renewal.
+- Refresh tokens are stored securely as hashes.
+- Revoked or expired refresh tokens cannot be used to renew sessions.
+
+---
+
+## Logging & Auditing
+
+Audit records are stored in the `AuditLogs` database table.
+
+Each record contains:
+
+| Field | Description |
+|---|---|
+| AuditLogId | Unique audit record identifier |
+| UserId | User responsible for the event, when available |
+| Action | Operation performed |
+| EntityName | Entity affected |
+| EntityId | Identifier of the affected entity |
+| Outcome | Operation result |
+| TimestampUtc | UTC event timestamp |
+| TraceId | Request correlation identifier, when available |
+
+Audit logging supports monitoring authentication events and contact management operations.
+
+Audit records are exposed through an administrator-restricted API endpoint.
+
+---
+
+## Database
+
+The application uses Microsoft SQL Server with Entity Framework Core.
+
+Main entities include:
+
+- Contacts
+- Countries
+- Users
+- RefreshTokens
+- AuditLogs
+
+The database contains relationships between users, contacts, and countries, as well as session and audit information.
+
+Entity configurations are maintained separately from domain entities.
+
+---
+
+## Data Access & Design Patterns
 
 ### Repository Pattern
+Encapsulates database operations behind interfaces.
 
-Encapsulates data access operations behind interfaces.
+### Unit of Work
+Coordinates operations that require database transactions.
 
 ### Dependency Injection
+Provides application dependencies through constructor injection.
 
-Provides dependencies through constructor injection instead of manually creating concrete implementations.
+### DTOs
+Transfers data across application boundaries without exposing domain entities directly.
 
-### Domain Entities
+### Asynchronous Programming
+Uses asynchronous database and application operations.
 
-Encapsulate business rules and control how entity data is modified.
-
-### DTOs (Data Transfer Objects)
-
-Transfer data between application boundaries without exposing internal domain entities.
+### EF Core Change Tracking
+Tracks modifications to entities and persists changes through `SaveChangesAsync`.
 
 ### Separation of Concerns
-
-Each project is responsible for a specific part of the application.
-
-### SOLID Principles
-
-The architecture is designed around principles such as:
-
-- Single Responsibility Principle (SRP).
-- Open/Closed Principle (OCP).
-- Liskov Substitution Principle (LSP).
-- Interface Segregation Principle (ISP).
-- Dependency Inversion Principle (DIP).
+Keeps domain rules, application logic, infrastructure, and API responsibilities separate.
 
 ---
 
-## 🗄️ Entity Framework Core
-
-The project uses **Entity Framework Core** as its Object-Relational Mapper (ORM).
-
-It provides an abstraction for working with SQL Server through C# objects and LINQ queries.
-
-### Implemented Concepts
-
-- DbContext.
-- Entity Mapping.
-- LINQ Queries.
-- Asynchronous Database Operations.
-- Change Tracking.
-- SaveChangesAsync.
-- Entity State Management.
-- Repository Implementations.
-
-### Change Tracking
-
-The project uses EF Core Change Tracking to detect modifications made to tracked entities.
-
-For example:
-
-```csharp
-var contact = await context.Contacts
-    .FirstOrDefaultAsync(c => c.ContactId == id);
-
-if (contact is null)
-    return false;
-
-contact.SetPhone(request.Phone);
-
-await context.SaveChangesAsync();
-```
-
-EF Core detects the modified properties and generates the appropriate SQL UPDATE statement.
-
-For read-only queries, `AsNoTracking()` can be used to avoid unnecessary change tracking.
-
----
-
-## 🔌 Dependency Injection
-
-The application uses the built-in Microsoft Dependency Injection container.
-
-Dependencies are registered during application startup.
-
-Examples include:
-
-- DbContext.
-- Repository implementations.
-- Application services.
-
-Constructor Injection is used to provide required dependencies.
-
-Example:
-
-```csharp
-public class ContactService(
-    IContactRepository contactRepository) : IContactService
-{
-    // Application logic
-}
-```
-
-This allows the Application layer to depend on abstractions rather than concrete infrastructure classes.
-
----
-
-## ⚠️ Exception Handling
-
-The API uses centralized exception handling through custom middleware.
-
-Instead of repeating exception handling logic inside every controller, the middleware intercepts unhandled exceptions and returns consistent HTTP error responses.
-
-This helps separate error handling from business and controller logic.
-
----
-
-## 🗃️ Database
-
-The application uses:
-
-```text
-Microsoft SQL Server
-```
-
-Main database entities include:
-
-```text
-Contacts
-Countries
-```
-
-The database stores contact information and the relationships between contacts and countries.
-
----
-
-## ⚙️ Installation
+## Installation & Setup
 
 ### Requirements
 
@@ -427,156 +280,130 @@ The database stores contact information and the relationships between contacts a
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Albarafahed/Contact.git
+git clone https://github.com/Albarafahed/ContactsSystemCleanArchitecture.git
 ```
 
 ### 2. Open the Solution
 
 Open the solution file in Visual Studio.
 
-### 3. Configure the Connection String
+### 3. Configure the Database Connection
 
-Update the connection string in the API project's `appsettings.json`.
+Configure the connection string for the API project.
 
 Example:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=.;Database=ContactsDB;Trusted_Connection=True;TrustServerCertificate=True;"
+    "DefaultConnection": "Server=localhost\\SQLEXPRESS;Database=ContactsDB;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }
 ```
 
-Adjust the server name and database configuration according to your SQL Server instance.
+Adjust the SQL Server instance and authentication settings according to your environment.
+
+**Security note:** Do not commit passwords, JWT signing keys, or other sensitive configuration values to GitHub. Use User Secrets or environment variables for development and deployment secrets.
 
 ### 4. Configure the Database
 
-Make sure the database schema is available and matches the EF Core model configuration.
+Make sure the SQL Server database schema is available and compatible with the EF Core model configurations.
 
-### 5. Build and Run
+The database must contain the required tables and relationships.
+
+### 5. Configure JWT Settings
+
+Provide the required JWT configuration securely before running the application.
+
+Do not store production signing keys in source control.
+
+### 6. Build and Run
 
 - Build the solution.
-- Set `ContactsSystemApi` as the Startup Project.
+- Set `ContactSystemApi` as the Startup Project.
 - Run the application.
+- Open Swagger to explore and test the API endpoints.
 
 ---
 
-## 📂 Project Structure
+## API Documentation
 
-```text
-ContactsSystemCleanArch
-│
-├── ContactsSystemApi
-│   ├── Controllers
-│   │   └── ContactsController.cs
-│   │
-│   ├── Middleware
-│   │   └── ApiExceptionMiddleware.cs
-│   │
-│   ├── Program.cs
-│   └── appsettings.json
-│
-├── ContactsSystemApplication
-│   ├── Contacts
-│   │   ├── Dtos
-│   │   ├── Interfaces
-│   │   ├── Requests
-│   │   └── Services
-│   │
-│   └── Interfaces
-│
-├── ContactsSystemDomain
-│   └── Entities
-│       └── Contact.cs
-│
-├── ContactsSystemInfrastructure
-│   ├── Data
-│   │   └── ContactsDbContext.cs
-│   │
-│   ├── Models
-│   └── Repositories
-│
-└── README.md
-```
+Swagger / OpenAPI provides interactive API documentation.
 
-*The structure above is representative. Adjust folder names to match the actual solution.*
+Use it to:
+
+- Explore available endpoints.
+- Test contact operations.
+- Authenticate using JWT.
+- Test role-based access restrictions.
+- Test ownership protection.
+- Test audit log filtering and pagination.
 
 ---
 
-## 📝 Current Scope
+## Testing
 
-This project focuses on backend architecture and contact management.
+Important testing scenarios include:
 
-Its primary goal is to demonstrate how to organize a .NET application using Clean Architecture, domain entities, application services, repository abstractions, and EF Core.
-
-Features not implemented yet should not be considered part of the current application.
+- Successful and failed login attempts.
+- Successful and failed registration attempts.
+- Refresh token renewal and rejection.
+- Logout and token revocation.
+- Access restrictions based on user roles.
+- Contact ownership enforcement.
+- Contact creation, updating, and deletion.
+- Audit record generation.
+- Admin-only access to audit logs.
+- Pagination and filtering validation.
 
 ---
 
-## 🚀 Future Improvements
+## Current Project Scope
 
-Potential improvements include:
+This project focuses on secure backend development and contact management.
 
-### API
+Its main objectives are to demonstrate:
 
-- Request validation.
-- Pagination.
-- Filtering and searching.
-- API versioning.
-- Swagger/OpenAPI documentation improvements.
+- Clean Architecture.
+- Secure RESTful API development.
+- Authentication and authorization.
+- Ownership-based access control.
+- Database design and persistence.
+- Transaction management.
+- Audit logging and monitoring.
 
-### Architecture
+Features should only be considered complete after implementation and appropriate testing.
 
-- Unit of Work Pattern, if justified by the application's transaction requirements.
-- Domain-specific exceptions.
+---
+
+## Future Improvements
+
+Potential areas for further development:
+
+### API & Validation
 - FluentValidation.
-- Mapping profiles.
-- More comprehensive testing.
-
-### Security
-
-- Authentication and Authorization.
-- JWT Bearer Authentication.
-- Role-Based Access Control (RBAC).
+- API versioning.
+- Advanced search capabilities.
 
 ### Testing
+- Unit testing.
+- Integration testing.
+- Automated security testing.
 
-- Unit Tests.
-- Integration Tests.
-- Application Service Tests.
-- Repository Tests.
+### Infrastructure & Deployment
+- Docker containerization.
+- Cloud deployment.
+- Secure secrets management.
+- CI/CD pipelines.
 
----
-
-## 📚 Learning Objectives
-
-This project provides practical experience with:
-
-- C#.
-- .NET 8.
-- ASP.NET Core Web API.
-- Clean Architecture.
-- Domain Entities.
-- Business Rules.
-- Entity Framework Core.
-- SQL Server.
-- LINQ.
-- Change Tracking.
-- Repository Pattern.
-- Dependency Injection.
-- DTOs.
-- Application Services.
-- RESTful API Design.
-- Asynchronous Programming.
-- Middleware.
-- SOLID Principles.
-- Separation of Concerns.
-- Git & GitHub.
+### Monitoring
+- Structured application logging.
+- Request correlation and Trace ID propagation.
+- Advanced audit reporting.
 
 ---
 
-## 👤 Author
+## Author
 
 **Albara Fahed Alharissy**
 
@@ -587,7 +414,7 @@ This project provides practical experience with:
 
 ---
 
-## ⭐ Support
+## Support
 
 If you find this project useful, consider giving it a ⭐ on GitHub.
 
@@ -595,6 +422,6 @@ Feedback and suggestions are welcome.
 
 ---
 
-## 📄 License
+## License
 
 No license file is currently included in this repository.
