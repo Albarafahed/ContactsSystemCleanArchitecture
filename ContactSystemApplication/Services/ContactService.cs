@@ -1,5 +1,6 @@
 ﻿
 using ContactsSystemApplication.DTO;
+using ContactsSystemApplication.DTOs;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;
@@ -48,6 +49,10 @@ public sealed class ContactService(IContactRepository contactRepository, IAuditL
 
         // Ownership comes from the authenticated user.
         contact.AssignToUser(userId);
+        if(await contactRepository.ExitEmailAsync(request.Email, cancellationToken))
+        {
+            throw new InvalidOperationException("A contact with the specified email already exists.");
+        }
 
         await unitOfWork.ExecuteInTransactionAsync(
             async ct =>
@@ -178,13 +183,14 @@ public sealed class ContactService(IContactRepository contactRepository, IAuditL
         string outcome,
         CancellationToken cancellationToken)
     {
-        return auditLogService.LogAsync(
-            userId,
-            action,
-            entityName,
-            entityId,
-            outcome,
-            saveImmediately: true,
+        return auditLogService.LogAsync(new CreateAuditLogRequestDto{
+            UserId = userId,
+            Action = action,
+            EntityName = entityName,
+            EntityId = entityId,
+            Outcome = outcome,
+            SaveImmediately= true,
+        },
             cancellationToken: cancellationToken);
     }
 

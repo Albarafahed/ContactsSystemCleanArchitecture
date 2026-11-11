@@ -1,34 +1,33 @@
-﻿using ContactsSystemApplication.Interfaces;
+﻿
+using ContactsSystemApplication.DTOs;
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 
 namespace ContactsSystemApplication.Services;
 
 public sealed class AuditLogService(
-    IAuditLogRepository auditLogRepository) : IAuditLogService
+    IAuditLogRepository auditLogRepository)
+    : IAuditLogService
 {
     public async Task LogAsync(
-        int? userId,
-        string action,
-        string entityName,
-        string? entityId,
-        string outcome,
-        string? traceId = null,
-        bool saveImmediately = false,
+        CreateAuditLogRequestDto request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var auditLog = new AuditLog(
-            userId,
-            action,
-            entityName,
-            entityId,
-            outcome,
-            traceId);
+            request.UserId,
+            request.Action,
+            request.EntityName,
+            request.EntityId,
+            request.Outcome,
+            request.TraceId);
 
         await auditLogRepository.AddAsync(
             auditLog,
             cancellationToken);
 
-        if (saveImmediately)
+        if (request.SaveImmediately)
         {
             await auditLogRepository.SaveChangesAsync(
                 cancellationToken);

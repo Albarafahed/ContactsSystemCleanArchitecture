@@ -1,5 +1,6 @@
 ﻿
 using ContactsSystemApplication.Auth;
+using ContactsSystemApplication.DTOs;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;
@@ -403,14 +404,15 @@ public sealed class AuthService : IAuthService
         bool saveImmediately,
         CancellationToken cancellationToken)
     {
-        return _auditLogService.LogAsync(
-            userId,
-            action,
-            entityName,
-            entityId,
-            outcome,
-            saveImmediately: saveImmediately,
-            cancellationToken: cancellationToken);
+        return _auditLogService.LogAsync(new CreateAuditLogRequestDto {
+            UserId = userId,
+            Action = action,
+            EntityName = entityName,
+            EntityId = entityId,
+            Outcome = outcome,
+            SaveImmediately = saveImmediately
+        }, cancellationToken: cancellationToken);
+            
     }
 
     private static void ValidatePassword(string password)

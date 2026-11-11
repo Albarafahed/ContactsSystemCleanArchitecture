@@ -1,4 +1,5 @@
 ﻿
+using ContactsSystemApplication.DTOs;
 using ContactsSystemDomain.Entities;
 
 namespace ContactsSystemApplication.Interfaces;
@@ -13,12 +14,6 @@ public interface IAuditLogRepository
         CancellationToken cancellationToken = default);
 
     Task<(IReadOnlyList<AuditLog> Items, int TotalCount)> GetPagedAsync(
-        int? userId,
-        string? action,
-        string? entityName,
-        DateTime? fromUtc,
-        DateTime? toUtc,
-        int pageNumber,
-        int pageSize,
+       AuditLogQueryRequestDto auditLogQueryRequestDto,
         CancellationToken cancellationToken = default);
 }

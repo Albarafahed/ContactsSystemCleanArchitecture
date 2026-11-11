@@ -1,4 +1,5 @@
 ﻿
+using ContactsSystemApplication.DTOs;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 using ContactsSystemInfrastructure.Persistence;
@@ -26,46 +27,40 @@ public sealed class AuditLogRepository(
 
     public async Task<(IReadOnlyList<AuditLog> Items, int TotalCount)>
         GetPagedAsync(
-            int? userId,
-            string? action,
-            string? entityName,
-            DateTime? fromUtc,
-            DateTime? toUtc,
-            int pageNumber,
-            int pageSize,
+          AuditLogQueryRequestDto queryRequestDto,
             CancellationToken cancellationToken = default)
     {
         IQueryable<AuditLog> query =
             context.AuditLogs.AsNoTracking();
 
-        if (userId.HasValue)
+        if (queryRequestDto.UserId.HasValue)
         {
             query = query.Where(
-                log => log.UserId == userId.Value);
+                log => log.UserId == queryRequestDto.UserId.Value);
         }
 
-        if (!string.IsNullOrWhiteSpace(action))
+        if (!string.IsNullOrWhiteSpace(queryRequestDto.Action))
         {
             query = query.Where(
-                log => log.Action == action);
+                log => log.Action == queryRequestDto.Action);
         }
 
-        if (!string.IsNullOrWhiteSpace(entityName))
+        if (!string.IsNullOrWhiteSpace(queryRequestDto.EntityName))
         {
             query = query.Where(
-                log => log.EntityName == entityName);
+                log => log.EntityName == queryRequestDto.EntityName);
         }
 
-        if (fromUtc.HasValue)
+        if (queryRequestDto.FromUtc.HasValue)
         {
             query = query.Where(
-                log => log.TimestampUtc >= fromUtc.Value);
+                log => log.TimestampUtc >= queryRequestDto.FromUtc.Value);
         }
 
-        if (toUtc.HasValue)
+        if (queryRequestDto.ToUtc.HasValue)
         {
             query = query.Where(
-                log => log.TimestampUtc <= toUtc.Value);
+                log => log.TimestampUtc <= queryRequestDto.ToUtc.Value);
         }
 
         var totalCount = await query.CountAsync(
@@ -74,8 +69,8 @@ public sealed class AuditLogRepository(
         var items = await query
             .OrderByDescending(log => log.TimestampUtc)
             .ThenByDescending(log => log.AuditLogId)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((queryRequestDto.PageNumber - 1) * queryRequestDto.PageSize)
+            .Take(queryRequestDto.PageSize)
             .ToListAsync(cancellationToken);
 
         return (items, totalCount);

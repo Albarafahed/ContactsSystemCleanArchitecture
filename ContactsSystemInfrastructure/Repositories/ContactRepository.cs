@@ -54,6 +54,11 @@ public sealed class ContactRepository (ContactsDbContext context) : IContactRepo
         context.Contacts.Remove(contact);
     }
 
+    public Task<bool> ExitEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        return context.Contacts.AnyAsync(c => c.Email == email, cancellationToken);
+    }
+
     public async Task<bool> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {

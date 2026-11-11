@@ -1,4 +1,5 @@
 ﻿
+using ContactsSystemApplication.DTOs;
 using ContactsSystemApplication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,14 +44,15 @@ public sealed class AuditLogsController(
 
         try
         {
-            var result = await auditLogQueryService.GetPagedAsync(
-                userId,
-                action,
-                entityName,
-                fromUtc,
-                toUtc,
-                pageNumber,
-                pageSize,
+            var result = await auditLogQueryService.GetPagedAsync(new AuditLogQueryRequestDto {
+                UserId = userId,
+                Action = action,
+                EntityName = entityName,
+                FromUtc = fromUtc,
+                ToUtc = toUtc,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            },
                 cancellationToken);
 
             return Ok(result);

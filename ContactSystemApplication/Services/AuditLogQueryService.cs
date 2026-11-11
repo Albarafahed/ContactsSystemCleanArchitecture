@@ -9,55 +9,27 @@ public sealed class AuditLogQueryService(
     : IAuditLogQueryService
 {
     public async Task<AuditLogPagedResultDto> GetPagedAsync(
-        int? userId,
-        string? action,
-        string? entityName,
-        DateTime? fromUtc,
-        DateTime? toUtc,
-        int pageNumber,
-        int pageSize,
+        AuditLogQueryRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        if (userId.HasValue && userId.Value <= 0)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(userId),
-                "User ID must be greater than zero.");
-        }
+        ArgumentNullException.ThrowIfNull(request);
 
-        if (pageNumber < 1)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(pageNumber),
-                "Page number must be greater than zero.");
-        }
+        ValidateRequest(request);
 
-        if (pageSize < 1 || pageSize > 100)
+        var normalizedRequest = new AuditLogQueryRequestDto
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(pageSize),
-                "Page size must be between 1 and 100.");
-        }
-
-        if (fromUtc.HasValue && toUtc.HasValue &&
-            fromUtc.Value > toUtc.Value)
-        {
-            throw new ArgumentException(
-                "FromUtc cannot be later than ToUtc.");
-        }
-
-        action = NormalizeFilter(action);
-        entityName = NormalizeFilter(entityName);
+            UserId = request.UserId,
+            Action = NormalizeFilter(request.Action),
+            EntityName = NormalizeFilter(request.EntityName),
+            FromUtc = request.FromUtc,
+            ToUtc = request.ToUtc,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize
+        };
 
         var (logs, totalCount) =
             await auditLogRepository.GetPagedAsync(
-                userId,
-                action,
-                entityName,
-                fromUtc,
-                toUtc,
-                pageNumber,
-                pageSize,
+                normalizedRequest,
                 cancellationToken);
 
         var items = logs.Select(log => new AuditLogDto
@@ -75,12 +47,45 @@ public sealed class AuditLogQueryService(
         return new AuditLogPagedResultDto
         {
             Items = items,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
             TotalCount = totalCount,
             TotalPages = (int)Math.Ceiling(
-                totalCount / (double)pageSize)
+                totalCount / (double)request.PageSize)
         };
+    }
+
+    private static void ValidateRequest(
+        AuditLogQueryRequestDto request)
+    {
+        if (request.UserId.HasValue && request.UserId.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(request.UserId),
+                "User ID must be greater than zero.");
+        }
+
+        if (request.PageNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(request.PageNumber),
+                "Page number must be greater than zero.");
+        }
+
+        if (request.PageSize < 1 || request.PageSize > 100)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(request.PageSize),
+                "Page size must be between 1 and 100.");
+        }
+
+        if (request.FromUtc.HasValue &&
+            request.ToUtc.HasValue &&
+            request.FromUtc.Value > request.ToUtc.Value)
+        {
+            throw new ArgumentException(
+                "FromUtc cannot be later than ToUtc.");
+        }
     }
 
     private static string? NormalizeFilter(string? value)
