@@ -32,10 +32,9 @@ namespace ContactsSystemInfrastructure.Repositories
             await context.Countries.Where(c => c.CountryId == id).ExecuteDeleteAsync() > 0;
         public async Task<bool> ExistsByIdAsync(int id)=>
             await context.Countries.AnyAsync(c => c.CountryId == id);
-      
+
 
         public async Task<bool> ExistsByNameAsync(string name) =>
-            await context.Countries.AnyAsync(c => c.CountryName == name);
-   
+                    await context.Countries.AnyAsync(c => c.CountryName == name);
     }
 }

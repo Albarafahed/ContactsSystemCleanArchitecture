@@ -106,8 +106,8 @@ public class ContactsController(IContactService contactService)
         if (id <= 0)
             return BadRequest($"Invalid contact ID: {id}.");
 
-        var contact = await contactService.GetByIdAsync(id);
+        var exists = await contactService.ExistsAsync(id);
 
-        return Ok(contact is not null);
+        return Ok(exists);
     }
 }

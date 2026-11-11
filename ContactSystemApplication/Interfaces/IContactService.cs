@@ -25,4 +25,7 @@ public interface IContactService
     Task<bool> DeleteAsync(
         int contactId,
         CancellationToken cancellationToken = default);
+    Task<bool> ExistsAsync(
+       int contactId,
+       CancellationToken cancellationToken = default);
 }

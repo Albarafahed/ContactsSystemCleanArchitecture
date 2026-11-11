@@ -1,6 +1,7 @@
 ﻿
 
 using ContactsSystemApplication.DTO;
+using ContactsSystemApplication.Exceptions;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;
@@ -108,10 +109,36 @@ public sealed class ContactService : IContactService
 
         _contactRepository.Delete(contact);
 
-      return  await _contactRepository.SaveChangesAsync(
-            cancellationToken);
+        return await _contactRepository.SaveChangesAsync(
+              cancellationToken);
     }
+    public async Task<bool> ExistsAsync(
+    int contactId,
+    CancellationToken cancellationToken = default)
+    {
+        EnsureAuthenticated();
 
+        if (contactId <= 0)
+            throw new ArgumentOutOfRangeException(
+                nameof(contactId),
+                "Contact ID must be greater than zero.");
+
+        var contact = await _contactRepository.GetByIdAsync(
+            contactId,
+            cancellationToken);
+
+        if (contact is null)
+            return false;
+
+        if (!_currentUser.IsAdmin &&
+            contact.OwnerUserId != GetCurrentUserId())
+        {
+            throw new ForbiddenAccessException(
+                "You are not allowed to access this contact.");
+        }
+
+        return true;
+    }
     private async Task<Contact> GetAccessibleContactAsync(
         int contactId,
         CancellationToken cancellationToken)
@@ -131,14 +158,15 @@ public sealed class ContactService : IContactService
                 "Contact was not found.");
 
         if (!_currentUser.IsAdmin &&
-            contact.OwnerUserId != GetCurrentUserId())
+      contact.OwnerUserId != GetCurrentUserId())
         {
-            throw new UnauthorizedAccessException(
+            throw new ForbiddenAccessException(
                 "You are not allowed to access this contact.");
         }
 
         return contact;
     }
+
 
     private void EnsureAuthenticated()
     {
