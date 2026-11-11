@@ -3,6 +3,7 @@ using ContactsSystemApplication.Auth;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace ContactsSystemApplication.Services;
 
@@ -14,6 +15,7 @@ public sealed class AuthService : IAuthService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
@@ -21,7 +23,8 @@ public sealed class AuthService : IAuthService
         IRefreshTokenRepository refreshTokenRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _contactRepository = contactRepository;
@@ -29,6 +32,7 @@ public sealed class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<AuthResponseDto> RegisterAsync(
@@ -49,14 +53,16 @@ public sealed class AuthService : IAuthService
         if (await _userRepository.EmailExistsAsync(
             email, cancellationToken))
         {
+            _logger.LogWarning(
+                "Registration failed because the email is already registered.");
+
             throw new InvalidOperationException(
                 "An account with this email already exists.");
         }
 
-        return await _unitOfWork.ExecuteInTransactionAsync(
+        var result = await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
-                // Create the user's profile contact.
                 var contact = new Contact(
                     request.Contact.FirstName,
                     request.Contact.LastName,
@@ -70,7 +76,6 @@ public sealed class AuthService : IAuthService
                 await _contactRepository.AddAsync(contact, ct);
                 await _contactRepository.SaveChangesAsync(ct);
 
-                // Create the account with the default User role.
                 var user = new User(
                     contact.ContactId,
                     _passwordHasher.HashPassword(request.Password));
@@ -78,7 +83,6 @@ public sealed class AuthService : IAuthService
                 await _userRepository.AddAsync(user, ct);
                 await _userRepository.SaveChangesAsync(ct);
 
-                // Assign the profile contact to its account owner.
                 contact.AssignToUser(user.UserId);
 
                 await _contactRepository.SaveChangesAsync(ct);
@@ -86,6 +90,12 @@ public sealed class AuthService : IAuthService
                 return await CreateAuthResponseAsync(user, ct);
             },
             cancellationToken);
+
+        _logger.LogInformation(
+            "User account registered successfully. UserId: {UserId}",
+            result.User.UserId);
+
+        return result;
     }
 
     public async Task<AuthResponseDto> LoginAsync(
@@ -108,22 +118,33 @@ public sealed class AuthService : IAuthService
             !_passwordHasher.VerifyPassword(
                 request.Password, user.PasswordHash))
         {
+            _logger.LogWarning(
+                "Login failed due to invalid credentials.");
+
             throw new UnauthorizedAccessException(
                 "Invalid email or password.");
         }
 
         if (!user.IsActive)
         {
+            _logger.LogWarning(
+                "Login attempt rejected for inactive account. UserId: {UserId}",
+                user.UserId);
+
             throw new UnauthorizedAccessException(
-                "This account is inactive.");
+                "Invalid email or password.");
         }
 
-        return await _unitOfWork.ExecuteInTransactionAsync(
+        var result = await _unitOfWork.ExecuteInTransactionAsync(
             ct => CreateAuthResponseAsync(user, ct),
             cancellationToken);
+
+        _logger.LogInformation(
+            "User logged in successfully. UserId: {UserId}",
+            user.UserId);
+
+        return result;
     }
-
-
 
     public async Task<AuthResponseDto> RefreshTokenAsync(
         RefreshTokenRequest request,
@@ -148,6 +169,9 @@ public sealed class AuthService : IAuthService
 
                 if (oldToken is null)
                 {
+                    _logger.LogWarning(
+                        "Refresh token renewal rejected: invalid, expired, or revoked token.");
+
                     throw new UnauthorizedAccessException(
                         "Invalid or expired refresh token.");
                 }
@@ -158,11 +182,10 @@ public sealed class AuthService : IAuthService
 
                 if (user is null || !user.IsActive)
                 {
-                    // The old token has already been revoked.
-                    // Returning allows the transaction to commit.
                     return (
                         Response: (AuthResponseDto?)null,
-                        AccountUnavailable: true
+                        AccountUnavailable: true,
+                        UserId: oldToken.UserId
                     );
                 }
 
@@ -170,25 +193,32 @@ public sealed class AuthService : IAuthService
 
                 return (
                     Response: (AuthResponseDto?)response,
-                    AccountUnavailable: false
+                    AccountUnavailable: false,
+                    UserId: user.UserId
                 );
             },
             cancellationToken);
 
         if (result.AccountUnavailable)
         {
+            _logger.LogWarning(
+                "Refresh token renewal rejected for unavailable account. UserId: {UserId}",
+                result.UserId);
+
             throw new UnauthorizedAccessException(
                 "This account is unavailable.");
         }
 
+        _logger.LogInformation(
+            "Refresh token renewed successfully. UserId: {UserId}",
+            result.UserId);
+
         return result.Response!;
     }
 
-
-
     public async Task LogoutAsync(
-    RefreshTokenRequest request,
-    CancellationToken cancellationToken = default)
+        RefreshTokenRequest request,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -198,17 +228,27 @@ public sealed class AuthService : IAuthService
         var tokenHash = _tokenService.HashRefreshToken(
             request.RefreshToken);
 
-        await _unitOfWork.ExecuteInTransactionAsync(
+        var revokedToken = await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
-                await _refreshTokenRepository.TryRevokeActiveAsync(
+                return await _refreshTokenRepository.TryRevokeActiveAsync(
                     tokenHash,
                     DateTime.UtcNow,
                     ct);
-
-                return true;
             },
             cancellationToken);
+
+        if (revokedToken is not null)
+        {
+            _logger.LogInformation(
+                "User logged out successfully. UserId: {UserId}",
+                revokedToken.UserId);
+        }
+        else
+        {
+            _logger.LogDebug(
+                "Logout request processed without an active refresh token.");
+        }
     }
 
     private async Task<AuthResponseDto> CreateAuthResponseAsync(
@@ -225,7 +265,7 @@ public sealed class AuthService : IAuthService
         var refreshToken = new RefreshToken(
             user.UserId,
             refreshTokenHash,
-           _tokenService.GetRefreshTokenExpiration());
+            _tokenService.GetRefreshTokenExpiration());
 
         await _refreshTokenRepository.AddAsync(
             refreshToken, cancellationToken);
