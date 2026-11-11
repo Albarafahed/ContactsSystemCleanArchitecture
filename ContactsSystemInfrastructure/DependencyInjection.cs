@@ -1,4 +1,5 @@
-﻿using ContactsSystemApplication.Interfaces;
+﻿using ContactsSystemApplication.AuditLogs.Services;
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Services;
 using ContactsSystemInfrastructure.Persistence;
 using ContactsSystemInfrastructure.Repositories;
@@ -36,12 +37,14 @@ public static class DependencyInjection
         services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<ICountryRepository, CountryRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
-
+        services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         // Application Services
         services.AddScoped<IContactService, ContactService>();
         services.AddScoped<ICountryService, CountryService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
+
 
         // Security Services
         services.AddScoped<IPasswordHasher, PasswordHasher>();
