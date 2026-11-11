@@ -187,8 +187,8 @@ public sealed class AuthService : IAuthService
 
 
     public async Task LogoutAsync(
-        RefreshTokenRequest request,
-        CancellationToken cancellationToken = default)
+    RefreshTokenRequest request,
+    CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -201,16 +201,10 @@ public sealed class AuthService : IAuthService
         await _unitOfWork.ExecuteInTransactionAsync(
             async ct =>
             {
-                var token =
-                    await _refreshTokenRepository.GetByTokenHashAsync(
-                        tokenHash, ct);
-
-                if (token is not null && !token.IsRevoked())
-                {
-                    token.Revoke();
-
-                    await _refreshTokenRepository.SaveChangesAsync(ct);
-                }
+                await _refreshTokenRepository.TryRevokeActiveAsync(
+                    tokenHash,
+                    DateTime.UtcNow,
+                    ct);
 
                 return true;
             },
@@ -231,7 +225,7 @@ public sealed class AuthService : IAuthService
         var refreshToken = new RefreshToken(
             user.UserId,
             refreshTokenHash,
-            DateTime.UtcNow.AddDays(7));
+           _tokenService.GetRefreshTokenExpiration());
 
         await _refreshTokenRepository.AddAsync(
             refreshToken, cancellationToken);

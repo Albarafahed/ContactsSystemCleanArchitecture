@@ -24,6 +24,11 @@ public sealed class TokenService : ITokenService
             throw new InvalidOperationException(
                 "JWT SecretKey must contain at least 32 bytes.");
         }
+        if (_settings.RefreshTokenExpirationDays <= 0)
+        {
+            throw new InvalidOperationException(
+                "Refresh token expiration must be greater than zero.");
+        }
 
         if (string.IsNullOrWhiteSpace(_settings.Issuer) ||
             string.IsNullOrWhiteSpace(_settings.Audience))
@@ -101,5 +106,10 @@ public sealed class TokenService : ITokenService
     {
         return DateTime.UtcNow.AddMinutes(
             _settings.AccessTokenExpirationMinutes);
+    }
+    public DateTime GetRefreshTokenExpiration()
+    {
+        return DateTime.UtcNow.AddDays(
+            _settings.RefreshTokenExpirationDays);
     }
 }

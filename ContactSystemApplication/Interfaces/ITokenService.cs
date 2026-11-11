@@ -12,4 +12,5 @@ public interface ITokenService
     string HashRefreshToken(string refreshToken);
 
     DateTime GetAccessTokenExpiration();
+    DateTime GetRefreshTokenExpiration();
 }

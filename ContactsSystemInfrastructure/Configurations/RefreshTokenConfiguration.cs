@@ -22,7 +22,7 @@ public sealed class RefreshTokenConfiguration
 
         entity.Property(e => e.TokenHash)
             .HasMaxLength(64)
-            .IsUnicode(false)
+            .IsUnicode()
             .IsRequired();
 
         entity.Property(e => e.ExpiresAt)

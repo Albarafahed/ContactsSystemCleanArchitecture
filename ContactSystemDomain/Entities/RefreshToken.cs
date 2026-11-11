@@ -74,7 +74,7 @@ public sealed class RefreshToken
 
     public void Revoke()
     {
-        if (RevokedAt.HasValue)
+        if (!IsActive())
             return;
 
         RevokedAt = DateTime.UtcNow;
