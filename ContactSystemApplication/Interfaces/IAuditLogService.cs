@@ -1,4 +1,4 @@
-﻿namespace ContactsSystemApplication.AuditLogs.Interfaces;
+﻿namespace ContactsSystemApplication.Interfaces;
 
 public interface IAuditLogService
 {

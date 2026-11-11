@@ -1,6 +1,5 @@
 ﻿
 using ContactsSystemApplication.Auth;
-using ContactsSystemApplication.AuditLogs.Interfaces;
 using ContactsSystemApplication.Interfaces;
 using ContactsSystemApplication.Requests;
 using ContactsSystemDomain.Entities;

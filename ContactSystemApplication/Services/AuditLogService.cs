@@ -1,8 +1,7 @@
-﻿using ContactsSystemApplication.AuditLogs.Interfaces;
-using ContactsSystemApplication.Interfaces;
+﻿using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 
-namespace ContactsSystemApplication.AuditLogs.Services;
+namespace ContactsSystemApplication.Services;
 
 public sealed class AuditLogService(
     IAuditLogRepository auditLogRepository) : IAuditLogService

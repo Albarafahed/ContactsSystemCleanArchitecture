@@ -1,5 +1,4 @@
 ﻿
-using ContactsSystemApplication.AuditLogs.Interfaces;
 using ContactsSystemApplication.DTO;
 using ContactsSystemApplication.Exceptions;
 using ContactsSystemApplication.Interfaces;
