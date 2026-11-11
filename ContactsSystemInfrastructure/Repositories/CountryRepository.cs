@@ -33,7 +33,8 @@ namespace ContactsSystemInfrastructure.Repositories
         public async Task<bool> ExistsByIdAsync(int id)=>
             await context.Countries.AnyAsync(c => c.CountryId == id);
       
-        public async Task<bool> ExistsByNameAsync(string name)=>
+
+        public async Task<bool> ExistsByNameAsync(string name) =>
             await context.Countries.AnyAsync(c => c.CountryName == name);
    
     }
