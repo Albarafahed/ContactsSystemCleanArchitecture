@@ -1,17 +1,12 @@
-﻿using ContactsSystemApplication.Interfaces;
+﻿using ContactsSystemApplication.AuditLogs.Interfaces;
+using ContactsSystemApplication.Interfaces;
 using ContactsSystemDomain.Entities;
 
 namespace ContactsSystemApplication.AuditLogs.Services;
 
-public class AuditLogService : IAuditLogService
+public sealed class AuditLogService(
+    IAuditLogRepository auditLogRepository) : IAuditLogService
 {
-    private readonly IAuditLogRepository _auditLogRepository;
-
-    public AuditLogService(IAuditLogRepository auditLogRepository)
-    {
-        _auditLogRepository = auditLogRepository;
-    }
-
     public async Task LogAsync(
         int? userId,
         string action,
@@ -19,6 +14,7 @@ public class AuditLogService : IAuditLogService
         string? entityId,
         string outcome,
         string? traceId = null,
+        bool saveImmediately = false,
         CancellationToken cancellationToken = default)
     {
         var auditLog = new AuditLog(
@@ -29,8 +25,14 @@ public class AuditLogService : IAuditLogService
             outcome,
             traceId);
 
-        await _auditLogRepository.AddAsync(
+        await auditLogRepository.AddAsync(
             auditLog,
             cancellationToken);
+
+        if (saveImmediately)
+        {
+            await auditLogRepository.SaveChangesAsync(
+                cancellationToken);
+        }
     }
 }

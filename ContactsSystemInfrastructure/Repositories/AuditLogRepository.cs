@@ -4,21 +4,21 @@ using ContactsSystemInfrastructure.Persistence;
 
 namespace ContactsSystemInfrastructure.Repositories;
 
-public class AuditLogRepository : IAuditLogRepository
+public sealed class AuditLogRepository(
+    ContactsDbContext context) : IAuditLogRepository
 {
-    private readonly ContactsDbContext _context;
-
-    public AuditLogRepository(ContactsDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task AddAsync(
         AuditLog auditLog,
         CancellationToken cancellationToken = default)
     {
-        await _context.AuditLogs.AddAsync(
+        await context.AuditLogs.AddAsync(
             auditLog,
             cancellationToken);
+    }
+
+    public Task SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return context.SaveChangesAsync(cancellationToken);
     }
 }

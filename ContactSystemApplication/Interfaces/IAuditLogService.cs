@@ -1,4 +1,4 @@
-﻿namespace ContactsSystemApplication.Interfaces;
+﻿namespace ContactsSystemApplication.AuditLogs.Interfaces;
 
 public interface IAuditLogService
 {
@@ -9,5 +9,6 @@ public interface IAuditLogService
         string? entityId,
         string outcome,
         string? traceId = null,
+        bool saveImmediately = false,
         CancellationToken cancellationToken = default);
 }
